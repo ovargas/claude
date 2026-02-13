@@ -1,0 +1,16 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Claude Code internals
+.claude/settings.local.json
+
+# FUSE artifacts
+.fuse_hidden*
