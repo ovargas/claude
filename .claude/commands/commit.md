@@ -23,6 +23,7 @@ The skill defines the commit format. Follow it precisely. Do not improvise.
 - `/commit` — review all changes and create commits
 - `/commit [TICKET-ID]` — commit with a specific ticket reference (e.g., `/commit CTR-12`)
 - `/commit --all` — stage and commit everything (use with caution)
+- `/commit --auto` — skip confirmation prompts, commit directly with best-judgment grouping and messages
 - `/commit path/to/file.ext path/to/other.ext` — commit specific files only
 
 ## Process
@@ -72,7 +73,9 @@ I see [N] changed files. Here's how I'd group them:
 Does this grouping make sense?
 ```
 
-Wait for confirmation before executing.
+**If `--auto` was passed**, skip the confirmation — proceed directly to Step 4 with your best-judgment grouping and messages. Do NOT ask for review.
+
+**Otherwise**, wait for confirmation before executing.
 
 ### Step 4: Write Commit Messages
 
@@ -153,9 +156,10 @@ For each planned commit:
    - Do NOT add co-author lines or attribution to Claude
    - These are the founder's commits
 
-6. **Ask before committing:**
+6. **Ask before committing (unless `--auto`):**
    - Always present the plan and get confirmation before executing
    - The founder might want to adjust grouping or messages
+   - With `--auto`, use your best judgment and proceed without asking
 
 7. **Don't push:**
    - This command commits locally. It does NOT push to remote
