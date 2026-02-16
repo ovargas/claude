@@ -35,12 +35,37 @@ This command uses the `sonnet` model because it's a read-and-organize operation.
    - Matches this repo's service tag
    - Is NOT locked in `backlog.lock`
 
-### Step 2: Validate the Item
+### Step 2: Clean Stale Locks
+
+Before picking an item, check the health of existing locks in `docs/backlog.lock`:
+
+For each lock entry, check if it's stale:
+1. **PR merged?** Run `gh pr list --head <branch> --state merged` — if the PR was merged, the lock and backlog update should have landed with it. If the lock is still present, it means main hasn't pulled the merged changes yet.
+   - Run `git pull` to get the latest main (which should include the backlog update from the merged PR)
+   - If the lock disappears after pull, it was correctly cleaned up by the PR merge
+   - If the lock persists after pull (edge case — PR was merged but lock commit was missing), remove it
+2. **Worktree gone?** Check if the worktree path still exists
+3. **Branch deleted?** Run `git branch --list <branch>` and `git ls-remote --heads origin <branch>`
+
+If any stale locks are found, clean them up automatically and report:
+```
+Cleaned up stale locks:
+- S-003 (feat/CTR-12) — PR merged, lock released
+- S-008 (fix/CTR-45) — branch deleted, lock released
+```
+
+Commit the cleanup if changes were made:
+```bash
+git add docs/backlog.lock docs/backlog.md
+git commit -m "chore(backlog): clean stale locks"
+```
+
+### Step 3: Validate the Item
 
 Before picking up the item, check:
 
 1. **Is the item already locked?** Check `docs/backlog.lock`:
-   - If locked by another worktree, skip it and report:
+   - If locked by another worktree (and the lock is not stale — verified in Step 2), skip it and report:
      ```
      S-003 is already being worked on:
      - Branch: feat/CTR-12
@@ -48,11 +73,6 @@ Before picking up the item, check:
      - Started: 2026-02-12T14:30:00
 
      Moving to the next available item...
-     ```
-   - If the lock looks stale (worktree doesn't exist, branch deleted), warn:
-     ```
-     S-003 has a stale lock (worktree no longer exists).
-     Clean it up and pick this item, or skip to the next?
      ```
 
 2. **Is there already work in Doing for THIS worktree?** If working from a worktree, check if this session's branch already has a lock. If yes:
@@ -76,7 +96,7 @@ Before picking up the item, check:
      ```
 5. **Are there blocking dependencies?** Check if other stories are listed as prerequisites in the backlog.
 
-### Step 3: Determine the Branch Name
+### Step 4: Determine the Branch Name
 
 Build the branch name from git-practices conventions:
 
@@ -90,7 +110,7 @@ Build the branch name from git-practices conventions:
 
 If the ticket ID isn't in the backlog, ask the founder.
 
-### Step 4: Lock the Backlog Item (BEFORE creating the worktree)
+### Step 5: Lock the Backlog Item (BEFORE creating the worktree)
 
 **Important:** The lock must be committed BEFORE the worktree is created. This prevents a race condition where two concurrent `/next` calls pick the same item.
 
@@ -108,7 +128,7 @@ locks:
 
 If the lockfile already exists with other entries, append the new lock — don't overwrite existing ones.
 
-### Step 5: Update the Backlog and Commit
+### Step 6: Update the Backlog and Commit
 
 1. Move the item from Ready to Doing in `docs/backlog.md`:
    - Change `- [ ]` to `- [>]` (in-progress marker)
@@ -122,7 +142,7 @@ If the lockfile already exists with other entries, append the new lock — don't
 
 This commit happens on the main branch so all worktrees can see it immediately.
 
-### Step 6: Create the Worktree
+### Step 7: Create the Worktree
 
 Now that the item is locked, create the worktree safely:
 
@@ -146,7 +166,7 @@ Now that the item is locked, create the worktree safely:
    ../{repo}-worktrees/<branch-name>
    ```
 
-### Step 7: Load Context
+### Step 8: Load Context
 
 Gather everything the implementation session will need:
 
@@ -155,7 +175,7 @@ Gather everything the implementation session will need:
 3. **Read any referenced research** documents
 4. **Read any referenced decision** records
 
-### Step 8: Present the Work (then STOP)
+### Step 9: Present the Work (then STOP)
 
 ```
 **Next up:** [Story title]

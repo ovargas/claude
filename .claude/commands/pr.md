@@ -25,15 +25,16 @@ The skill defines the PR format. Follow it precisely. Do not improvise.
 - `/pr --draft` — create a draft PR
 - `/pr --auto` — skip confirmation prompt, submit the PR directly with best-judgment title and body
 - `/pr --commit` — commit any uncommitted changes first (runs `/commit` logic), then create the PR
+- `/pr --rebase` — rebase the feature branch onto the latest target branch before creating the PR
 - `/pr --base=develop` — target a specific base branch (default: main)
 
-Flags combine: `/pr --commit --auto` commits and submits without any confirmation prompts. `/pr --commit` commits (asks for confirmation on the commit) then creates the PR (asks for confirmation on the PR).
+Flags combine freely: `/pr --commit --rebase --auto` commits, rebases, and submits without any confirmation prompts.
 
 ## Process
 
 ### Step 1: Determine Context
 
-1. **Parse `$ARGUMENTS`** for ticket ID, `--draft`, `--auto`, `--commit` flags, and `--base` target
+1. **Parse `$ARGUMENTS`** for ticket ID, `--draft`, `--auto`, `--commit`, `--rebase` flags, and `--base` target
 2. **Read the current branch name:**
    - Extract the type and ticket ID (e.g., `feat/CTR-12` → type: `feat`, ticket: `CTR-12`)
    - If the branch doesn't follow `<type>/<ticket-id>` format, ask for the ticket ID
@@ -62,7 +63,45 @@ This is critical — the PR describes ALL commits on the branch, not just the la
    - Run `git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null` to check tracking
    - If not pushed, push with: `git push -u origin $(git branch --show-current)`
 
-### Step 4: Compose the PR
+### Step 4: Rebase (if `--rebase`)
+
+If `--rebase` was passed:
+
+1. **Fetch the latest target branch:**
+   ```bash
+   git fetch origin <base>
+   ```
+
+2. **Rebase onto the target:**
+   ```bash
+   git rebase origin/<base>
+   ```
+
+3. **If conflicts occur:**
+   - Stop and report the conflicting files:
+     ```
+     Rebase conflict in [N] file(s):
+     - path/to/file1.ext
+     - path/to/file2.ext
+
+     Resolve the conflicts manually, then run:
+       git rebase --continue
+     Or abort with:
+       git rebase --abort
+
+     Re-run `/pr` after resolving.
+     ```
+   - **STOP. Do NOT attempt to resolve conflicts automatically.** The founder must resolve them.
+
+4. **If rebase succeeds**, force-push the rebased branch:
+   ```bash
+   git push --force-with-lease
+   ```
+   `--force-with-lease` is safer than `--force` — it fails if someone else has pushed to the branch.
+
+**Note:** Rebase rewrites history. This is expected for feature branches. The result is a clean, linear history on the target branch after merge.
+
+### Step 5: Compose the PR
 
 **Title format** (from git-practices skill):
 ```
@@ -114,11 +153,11 @@ Here's the PR I'd create:
 Ready to submit?
 ```
 
-**If `--auto` was passed**, skip the confirmation — proceed directly to Step 5 with your best-judgment title and body. Do NOT ask for review.
+**If `--auto` was passed**, skip the confirmation — proceed directly to Step 6 with your best-judgment title and body. Do NOT ask for review.
 
 **Otherwise**, wait for confirmation before submitting.
 
-### Step 5: Submit the PR
+### Step 6: Submit the PR
 
 Use the GitHub CLI:
 
@@ -152,32 +191,32 @@ If targeting a non-default base:
 gh pr create --base develop --title "<title>" --body "..."
 ```
 
-### Step 6: Release the Backlog Lock
+### Step 7: Update Backlog and Release Lock (on the PR branch)
 
-After the PR is successfully created:
+**These changes go on the feature branch, not main.** They will merge with the code when the PR lands, so the backlog reflects reality: the item is Done when the code is actually in main.
 
 1. **Read `docs/backlog.lock`** — find the lock entry for this branch
 2. **If a lock exists:**
    - Remove this branch's entry from the lockfile
    - If no more entries remain, delete the lockfile entirely
-   - Commit the change **on the main branch** (switch context if needed):
-     ```bash
-     # From the main repo, not the worktree:
-     git -C <main-repo-path> add docs/backlog.lock
-     git -C <main-repo-path> commit -m "chore(backlog): unlock [ITEM-ID] after PR created"
-     ```
 3. **Update `docs/backlog.md`** — move the item from Doing to Done:
    - Change `- [>]` to `- [x]`
    - Add PR reference: `[x] S-003: Story title — PR #[number]`
-   - Commit:
-     ```bash
-     git -C <main-repo-path> add docs/backlog.md
-     git -C <main-repo-path> commit -m "chore(backlog): move [ITEM-ID] to done [TICKET-ID]"
-     ```
+4. **Commit both changes on the feature branch:**
+   ```bash
+   git add docs/backlog.lock docs/backlog.md
+   git commit -m "chore(backlog): mark [ITEM-ID] done and release lock [TICKET-ID]"
+   ```
+5. **Push the new commit** so the PR includes it:
+   ```bash
+   git push
+   ```
 
-**Note:** If running inside a worktree, the lock/backlog commits need to happen on the main branch. Use `git -C` to target the main repo directory, or instruct the founder to pull from main in their next session.
+**Why on the branch, not main:** When the PR merges, the backlog update and lock release land on main together with the code. This means the item stays locked and in Doing until the PR is actually merged — which is the correct definition of done. Other worktrees running `/next` will see the lock until the merge happens, preventing conflicts.
 
-### Step 7: Report
+**Note on stale locks:** If a PR is abandoned or a branch is deleted without merging, the lock becomes stale. `/next` detects stale locks automatically and offers to clean them up (see `/next` Step 2).
+
+### Step 8: Report
 
 ```
 **PR created:**
@@ -186,9 +225,10 @@ After the PR is successfully created:
 - **Target:** main ← branch-name
 - **Status:** [open | draft]
 
-**Backlog updated:**
+**Backlog updated (included in PR):**
 - **Lock released:** ✅ [ITEM-ID] unlocked
 - **Item moved:** Doing → Done (PR #[number])
+- These changes merge with the code when the PR lands
 
 **Cleanup (optional):**
 - Remove the worktree when PR is merged: `/worktree remove <branch-name>`

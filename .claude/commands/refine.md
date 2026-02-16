@@ -126,7 +126,16 @@ Changes made:
 - [Change 3]
 
 The document status is now: [status].
+
+Next step: [context-dependent — see rules below]
 ```
+
+**Next step rules:**
+- If the document is a **product brief** (IDEA-NNN) and is now ready for breakdown → suggest `/feature [IDEA-NNN]` or `/epic [idea name]`
+- If the document is a **feature spec** (FEAT-NNN) with no plan yet → suggest `/plan FEAT-NNN`
+- If the document is a **feature spec** (FEAT-NNN) with an existing plan → suggest `/refine docs/plans/...` to update the plan, or note the plan may need revision
+- If the document is an **epic** (EPIC-NNN) → suggest `/feature --epic=EPIC-NNN` in the relevant service repo
+- Never suggest `/feature FEAT-NNN` for an already-specced feature — that's what `/refine` just did
 
 ### Step 6: Handle Cascading Changes
 
