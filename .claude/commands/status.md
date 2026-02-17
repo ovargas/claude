@@ -123,7 +123,32 @@ Plan: [docs/plans/... | not yet planned]
 [Date]: [Summary from handoff — what was being worked on, where it stopped, what's next]
 ```
 
-4. **End with a recommendation:**
+4. **Check for incomplete epics** (when backlog is empty or nearly empty):
+
+   If Ready and Doing are both empty (or Ready has 0 items and Doing is about to finish):
+   - Read `docs/epics/` — check each epic's `status` and `affected_repos`
+   - Cross-reference with `docs/features/` — are there epics with repos that haven't had `/feature` run yet?
+   - Cross-reference with `docs/backlog.md` — are there features with stories not yet Done?
+   - Present incomplete epics:
+
+   ```
+   ## Incomplete Epics
+
+   No stories left in the backlog. These epics still have outstanding work:
+
+   - **EPIC-001** ([name]) — [repo-x] has 2/5 stories done, [repo-y] hasn't started `/feature` yet
+   - **EPIC-003** ([name]) — all features specced, but [repo-x] has 3 stories still in Ready (no plan yet)
+
+   **Suggested:** Continue EPIC-001 by running `/feature --epic=EPIC-001` in [repo-y],
+   or `/next` in [repo-x] to pick up remaining stories.
+   ```
+
+   If ALL epics are fully complete, note it:
+   ```
+   All epics complete. Time for a new initiative — run `/epic` in the hub.
+   ```
+
+5. **End with a recommendation:**
 
 ```
 **Suggested next action:** [What to work on and why — based on priorities, dependencies, and momentum]
