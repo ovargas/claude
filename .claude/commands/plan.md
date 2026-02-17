@@ -309,6 +309,24 @@ Please review. Key things to check:
 
 3. **Iterate based on feedback.** Surgical edits to the plan.
 
+4. **Request approval:**
+
+After the founder is satisfied with the plan, ask explicitly:
+
+```
+The plan is ready. Do you approve it for implementation?
+```
+
+**If approved:**
+- Update the plan's frontmatter: `status: draft` → `status: approved`
+- Proceed to Phase 4
+
+**If not approved:**
+- Iterate further based on feedback
+- Ask again when changes are applied
+
+This is a hard gate. The plan must be `approved` before `/implement` will execute it.
+
 ### Phase 4: Update Backlog
 
 After the plan is approved:

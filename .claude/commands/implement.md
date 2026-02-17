@@ -26,15 +26,31 @@ When this command is invoked:
    - If bare `/implement`, check `docs/backlog.md` for items in Doing status. Read the associated plan.
    - If nothing is in progress: "Nothing in Doing. Run `/next` to pick up work first."
 
-2. **Read the full context:**
+2. **Check plan approval status:**
+   - Read the plan's frontmatter `status` field
+   - If `status: approved` → proceed
+   - If `status: draft` → **STOP:**
+     ```
+     ⛔ This plan has not been approved yet.
+
+     The plan at [path] is still in draft status. Plans must be approved
+     before implementation can begin.
+
+     Run `/plan [FEAT-NNN]` to review and approve the plan, or manually
+     update the plan's frontmatter to `status: approved` if you've already
+     reviewed it.
+     ```
+   - Do NOT proceed with implementation on an unapproved plan. This is not optional.
+
+3. **Read the full context:**
    - The implementation plan (required — refuse to implement without one unless the story is trivially small)
    - The feature spec it references
    - `stack.md` — the tech stack and conventions
    - Any research or decision docs referenced
 
-3. **If `--phase=N` was specified**, skip to that phase. Otherwise, start from the beginning (or resume from the last completed phase if continuing a session).
+4. **If `--phase=N` was specified**, skip to that phase. Otherwise, start from the beginning (or resume from the last completed phase if continuing a session).
 
-4. **Present the implementation overview:**
+5. **Present the implementation overview:**
 
 ```
 **Implementing:** [Story/Feature name]
