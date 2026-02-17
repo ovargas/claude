@@ -27,11 +27,66 @@ This command runs in the **hub repository only**. It produces the product-level 
 ## Process Overview
 
 ```
+Phase 0: Decision Sync → Pull latest decisions from affected service repos, flag conflicts
 Phase 1: Capture → What is this initiative and why does it matter?
 Phase 2: Product Analysis → Market context, user impact, risks (PO agent)
 Phase 3: Technical Routing → Which repos are affected and how? (Architect agent)
 Phase 4: Agreements → API contracts, shared conventions, cross-team decisions
 Phase 5: Document → Epic record with all context for service repos
+```
+
+---
+
+## Phase 0: Decision Sync (Mandatory)
+
+**Goal:** Ensure the hub is working with up-to-date technical reality before planning a new initiative.
+
+1. **Read the teams registry** from `stack.md` to get the list of service repos and their local paths.
+
+2. **For each service repo**, read `docs/decisions/` (if accessible) and collect:
+   - Decision records created or updated since the last epic was created
+   - Any decision that overrides or modifies a hub-level agreement (check the `epic:` frontmatter field)
+
+3. **Compare against hub decisions** in `docs/decisions/`:
+   - Flag **conflicts** — a service repo changed something the hub assumed was settled
+   - Flag **new constraints** — service repos adopted patterns or conventions the hub doesn't know about yet
+   - Note **confirmations** — service repo decisions that align with hub assumptions (no action needed)
+
+4. **If conflicts exist**, present them before proceeding:
+
+```
+⚠️ Decision sync found conflicts with service repos:
+
+**[repo-name]** — ADR-012 (2026-02-15):
+  Changed: [what changed]
+  Hub assumed: [what the hub's ADR-005 says]
+  Impact: [how this affects new planning]
+
+**[repo-name]** — ADR-018 (2026-02-14):
+  New constraint: [what was decided]
+  Hub has no record of this.
+
+Options:
+1. Update hub decisions to match reality, then continue
+2. Proceed with awareness (decisions noted in the epic)
+3. Stop and resolve conflicts first
+```
+
+Wait for the founder's choice before proceeding.
+
+5. **If no conflicts**, note it and move on:
+
+```
+✅ Decision sync complete — hub decisions are consistent with service repos.
+[N] service repo decisions reviewed, no conflicts found.
+```
+
+**If service repos are not locally accessible** (different machine, not cloned), skip with a warning:
+
+```
+⚠️ Could not access service repo [name] at [path].
+Proceeding without decision sync for this repo.
+Consider reviewing its docs/decisions/ manually before finalizing the epic.
 ```
 
 ---
