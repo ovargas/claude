@@ -42,11 +42,12 @@ When this command is invoked:
    - Read ALL decision records that reference this epic: search `{hub-path}/docs/decisions/` for files with `epic: EPIC-NNN` in frontmatter
    - These decisions (API contracts, conventions, data agreements) become **constraints** for this feature — they are not optional, they are the agreed interface
    - Pre-fill the feature context from the epic's description, scope, and this repo's role from the "Affected Repos" section
+   - **Update epic lifecycle status:** If the epic's frontmatter is `status: draft`, update it to `status: active` in the hub. This is the first concrete work being done for this epic, so it's no longer a draft. (If the hub is not writable, note it and suggest the founder update it manually.)
    - Present the context loaded:
      ```
      Loading context from hub epic EPIC-003:
 
-     **Epic:** [name]
+     **Epic:** [name] (status updated: draft → active)
      **This repo's role:** [what the epic says this repo needs to implement]
 
      **Agreements that constrain this feature:**
