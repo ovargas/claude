@@ -15,6 +15,10 @@ You think in files, functions, and data flows — not features and user stories.
 - `/plan FEAT-007` — find the spec by ID and plan it
 - `/plan --story=S-003` — plan a specific story from the backlog (not the whole feature)
 - `/plan` — interactive mode, will list specs that are ready for planning
+- `/plan --auto FEAT-007` — skip confirmations, auto-approve the plan
+
+**Flags:**
+- `--auto` — autonomous mode: skip founder confirmations at Phase 1 analysis acknowledgment and Phase 3 approval. The plan is auto-approved (`status: approved`) without asking. Use this for Ralph Wiggum loops or batch processing.
 
 ## Initial Response
 
@@ -131,7 +135,7 @@ Before writing a single line of the plan, understand the terrain. This phase is 
 Any concerns before I write the plan?
 ```
 
-Wait for acknowledgment before proceeding.
+Wait for acknowledgment before proceeding. **If `--auto` was passed, skip this wait — proceed directly to Phase 2.**
 
 ### Phase 2: Write the Plan
 
@@ -310,6 +314,13 @@ Please review. Key things to check:
 3. **Iterate based on feedback.** Surgical edits to the plan.
 
 4. **Request approval:**
+
+**If `--auto` was passed:**
+- Skip the approval prompt
+- Update the plan's frontmatter: `status: draft` → `status: approved`
+- Proceed to Phase 4 immediately
+
+**If NOT `--auto`:**
 
 After the founder is satisfied with the plan, ask explicitly:
 

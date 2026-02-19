@@ -15,6 +15,12 @@ This is the ONE command that writes code. Every other command in the pre-impleme
 - `/implement docs/plans/2026-02-12-notifications.md` — implement a specific plan
 - `/implement --phase=2` — resume from a specific phase (after a session break)
 - `/implement --story=S-005` — implement a specific story
+- `/implement --auto` — autonomous mode, skip manual pause points
+
+**Flags:**
+- `--auto` — autonomous mode: skip manual pause/confirmation points between phases. Still runs all automated verification (tests, lint, typecheck) and still stops on failures. Only skips "pause for manual confirmation" gates. Use this for Ralph Wiggum loops or batch processing.
+- `--phase=N` — resume from a specific phase
+- Flags combine: `/implement --auto --phase=2`
 
 ## Initial Response
 
@@ -100,8 +106,16 @@ Beginning Phase 1: [Phase name]
      I'd like to [alternative approach] instead. This still meets the acceptance criteria because [justification].
      OK to proceed?
      ```
+   - **If `--auto`:** Log the deviation and proceed with best judgment. Do NOT stop for approval on deviations — only stop on test/build failures that can't be resolved after 2 attempts.
 
 5. **If the plan says "pause for manual confirmation":**
+
+   **If `--auto` was passed:** Skip the manual pause — proceed to the next phase automatically after automated verification passes. Log that the manual check was skipped:
+   ```
+   ⏩ Manual pause skipped (--auto): Phase [N] — [manual check description]
+   ```
+
+   **If NOT `--auto`:**
    ```
    Phase [N] complete. The plan requires manual verification before proceeding:
    - [ ] [Manual check from the plan]

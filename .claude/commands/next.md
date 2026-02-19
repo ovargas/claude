@@ -22,6 +22,10 @@ This command uses the `sonnet` model because it's a read-and-organize operation.
 - `/next S-005` — pick a specific story by reference
 - `/next backend` — pick the next item tagged for a specific service
 - `/next FEAT-003` — pick the next unfinished story from a specific feature
+- `/next --auto` — pick highest-priority item without asking, skip all prompts
+
+**Flags:**
+- `--auto` — autonomous mode: automatically pick the highest-priority ready item, skip the "continue in-progress or pick new" choice (always picks new if nothing is in Doing for this worktree, continues in-progress if something is), and skip all confirmations. Use this for Ralph Wiggum loops or batch processing.
 
 ## Process
 
@@ -76,6 +80,10 @@ Before picking up the item, check:
      ```
 
 2. **Is there already work in Doing for THIS worktree?** If working from a worktree, check if this session's branch already has a lock. If yes:
+
+   **If `--auto`:** Skip the choice — run `/implement` to continue the in-progress work. Do not pick a new item when there's already work in progress for this worktree.
+
+   **If NOT `--auto`:**
    ```
    You already have work in progress:
    - [Item in Doing] — branch: feat/CTR-12
@@ -89,11 +97,13 @@ Before picking up the item, check:
 
 3. **Does this story have a parent feature spec?** If yes, read it.
 4. **Does this story have an implementation plan?** Check `docs/plans/` for a plan that covers this story.
-   - If no plan exists, warn:
-     ```
-     This story doesn't have an implementation plan yet.
-     Run `/plan FEAT-NNN` first to create one, or proceed without a plan (not recommended for complex work).
-     ```
+   - If no plan exists:
+     - **If `--auto`:** Note the missing plan but proceed — the Ralph Wiggum loop prompt should handle running `/plan --auto` before `/implement`.
+     - **If NOT `--auto`:** Warn:
+       ```
+       This story doesn't have an implementation plan yet.
+       Run `/plan FEAT-NNN` first to create one, or proceed without a plan (not recommended for complex work).
+       ```
 5. **Are there blocking dependencies?** Check if other stories are listed as prerequisites in the backlog.
 
 ### Step 4: Determine the Branch Name
