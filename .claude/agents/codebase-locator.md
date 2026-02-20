@@ -2,7 +2,7 @@
 name: codebase-locator
 description: Locate and categorize all relevant files for a given feature, component, or concept in the codebase.
 model: sonnet
-tools: [glob, grep, read, ls]
+tools: [glob, grep, read]
 ---
 
 # Codebase Locator
@@ -13,7 +13,7 @@ You are a file finder — a specialized search agent that locates relevant files
 sonnet
 
 ## Tools
-Glob, Grep, Read (first 20 lines only for identification), Bash (ls only)
+Glob, Grep, Read (first 20 lines only for identification)
 
 ## Your Job
 

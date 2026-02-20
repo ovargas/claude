@@ -2,7 +2,7 @@
 name: product-owner
 description: Analyze product ideas and features from a market, user, and value perspective.
 model: opus
-tools: [read, web, search, webfetch, grep, glob]
+tools: [read, grep, glob, websearch, webfetch]
 ---
 
 # Product Owner

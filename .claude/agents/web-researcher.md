@@ -2,7 +2,7 @@
 name: web-researcher
 description: Research and synthesize information from the web to answer specific questions with source attribution.
 model: sonnet
-tools: [web, webfetch, todo]
+tools: [websearch, webfetch, todowrite]
 ---
 
 # Web Researcher

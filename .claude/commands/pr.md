@@ -22,21 +22,21 @@ The skill defines the PR format. Follow it precisely. Do not improvise.
 ## Invocation
 
 **Usage patterns:**
-- `/pr` — create a PR for the current branch
+- `/pr` — commit pending changes (if any), create and submit a PR without prompts
 - `/pr [TICKET-ID]` — create a PR with a specific ticket reference
 - `/pr --draft` — create a draft PR
-- `/pr --auto` — skip confirmation prompt, submit the PR directly with best-judgment title and body
-- `/pr --commit` — commit any uncommitted changes first (runs `/commit` logic), then create the PR
+- `/pr --manual` — ask for confirmation before committing and before submitting the PR
+- `/pr --no-commit` — skip auto-committing pending changes (warn if uncommitted changes exist)
 - `/pr --rebase` — rebase the feature branch onto the latest target branch before creating the PR
 - `/pr --base=develop` — target a specific base branch (default: main)
 
-Flags combine freely: `/pr --commit --rebase --auto` commits, rebases, and submits without any confirmation prompts.
+Flags combine freely: `/pr --rebase --draft` rebases and creates a draft PR. By default, `/pr` auto-commits pending changes and submits without prompts.
 
 ## Process
 
 ### Step 1: Determine Context
 
-1. **Parse `$ARGUMENTS`** for ticket ID, `--draft`, `--auto`, `--commit`, `--rebase` flags, and `--base` target
+1. **Parse `$ARGUMENTS`** for ticket ID, `--draft`, `--manual`, `--no-commit`, `--rebase` flags, and `--base` target
 2. **Read the current branch name:**
    - Extract the type and ticket ID (e.g., `feat/CTR-12` → type: `feat`, ticket: `CTR-12`)
    - If the branch doesn't follow `<type>/<ticket-id>` format, ask for the ticket ID
@@ -59,8 +59,8 @@ This is critical — the PR describes ALL commits on the branch, not just the la
 ### Step 3: Check Branch State
 
 1. **Run `git status`** — check for uncommitted changes
-   - **If `--commit` was passed and there are uncommitted changes:** Run the `/commit` flow inline — review changes, group them, write messages, and commit. Respect `--auto`: if `--auto` is also set, commit without asking; otherwise, ask for confirmation on the commit grouping before proceeding to the PR.
-   - **If `--commit` was NOT passed and there are uncommitted changes:** Warn the founder: "You have uncommitted changes. Run `/commit` first, or re-run with `/pr --commit` to commit and create the PR in one step."
+   - **If there are uncommitted changes and `--no-commit` was NOT passed (default):** Run the `/commit` flow inline — review changes, group them, write messages, and commit. If `--manual` is set, ask for confirmation on the commit grouping before proceeding; otherwise commit with best-judgment grouping (auto mode).
+   - **If there are uncommitted changes and `--no-commit` was passed:** Warn the founder: "You have uncommitted changes. Run `/commit` first, or re-run without `--no-commit` to auto-commit and create the PR in one step."
 2. **Check if branch is pushed:**
    - Run `git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null` to check tracking
    - If not pushed, push with: `git push -u origin $(git branch --show-current)`
@@ -155,9 +155,9 @@ Here's the PR I'd create:
 Ready to submit?
 ```
 
-**If `--auto` was passed**, skip the confirmation — proceed directly to Step 6 with your best-judgment title and body. Do NOT ask for review.
+**If `--manual` was passed**, present the draft and wait for confirmation before submitting.
 
-**Otherwise**, wait for confirmation before submitting.
+**Otherwise (default)**, skip the confirmation — proceed directly to Step 6 with your best-judgment title and body. Do NOT ask for review.
 
 ### Step 6: Submit the PR
 
@@ -252,8 +252,8 @@ Next steps:
    - Title follows the exact same pattern as commit messages
 
 2. **HARD BOUNDARY — No implementation:**
-   - This command creates PRs, it does NOT write code
-   - If uncommitted changes exist, direct the founder to `/commit` first
+   - This command commits and creates PRs, it does NOT write application code
+   - The inline `/commit` flow handles uncommitted changes automatically
    - Do NOT modify any application source code
 
 3. **Review ALL commits:**
@@ -266,17 +266,18 @@ Next steps:
    - If no tests exist, note that explicitly: "No automated tests added — manual verification only"
    - Be specific: "Tested with 500+ documents" is better than "Tested manually"
 
-5. **Ask before submitting (unless `--auto`):**
-   - Always present the full draft and get confirmation
-   - The founder might want to adjust the summary, add context, or change to draft
-   - With `--auto`, use your best judgment and submit without asking
+5. **Auto-submit by default (use `--manual` to review):**
+   - By default, use best judgment for title and body and submit without asking
+   - With `--manual`, present the full draft and get confirmation before submitting
+   - The founder uses `--manual` when they want to adjust the summary, add context, or change to draft
 
 6. **One ticket per PR:**
    - Don't bundle unrelated work
    - If the branch has commits for multiple tickets, flag this as a problem
 
-7. **Clean state required (unless `--commit`):**
-   - Don't create a PR with uncommitted changes — unless `--commit` is passed, in which case commit them first
+7. **Auto-commit by default (use `--no-commit` to skip):**
+   - By default, auto-commit pending changes before creating the PR
+   - With `--no-commit`, warn if uncommitted changes exist and stop
    - Don't create a PR if the branch hasn't been pushed — push automatically
    - Handle both situations gracefully before proceeding
 

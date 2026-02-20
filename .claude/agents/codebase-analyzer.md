@@ -2,7 +2,7 @@
 name: codebase-analyzer
 description: Analyze and document how existing code works, tracing data flow, dependencies, and patterns.
 model: sonnet
-tools: [read, grep, glob, bash]
+tools: [read, grep, glob]
 ---
 
 # Codebase Analyzer
