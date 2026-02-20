@@ -17,9 +17,10 @@ This command accepts an inline idea description and an optional research level f
 **Usage patterns:**
 - `/idea` — interactive mode, will ask for the idea
 - `/idea Build a meal planning app for busy parents` — starts with the provided idea
-- `/idea --research=skip Build a meal planning app` — skips research phase
-- `/idea --research=light Build a meal planning app` — light research (competitors, best practices)
-- `/idea --research=deep Build a meal planning app` — deep research (market analysis, technical feasibility, existing solutions)
+- `/idea --deep Build a meal planning app` — spawn agents for full product and market analysis
+
+**Flags:**
+- `--deep` — spawn product-owner and web-researcher agents for thorough market analysis, competitive landscape, and user research. Without this flag, all research is done directly using WebSearch. Default is lightweight — no agents spawned.
 
 ## Initial Response
 
@@ -144,18 +145,13 @@ Based on our conversation, I'd recommend [level] research because [reason].
 Which level would you prefer?
 ```
 
-### Skip Research
-- Proceed directly to Round 4.
-- Note in the final document: "Research: Skipped (founder has domain expertise)"
+### No `--deep` (default)
 
-### Light Research
+Do the research yourself using WebSearch:
 
-Use the web-researcher agent and the product-owner agent together:
-
-1. **Spawn web-researcher** for factual gathering: competitors, pricing, common patterns, technology choices
-2. **Spawn product-owner** for product interpretation: "Given this idea [description] and target user [from Round 2], assess the market opportunity, early adopter profile, and biggest risk. Light analysis — focus on: is there demand? Who are the competitors? What's the gap?"
-
-Wait for both agents to return.
+1. **Competitors:** Search for existing solutions, check pricing, features, and user complaints
+2. **Market context:** Look for demand signals, trends, market size if relevant
+3. **Product assessment:** Apply your product knowledge — is there demand? Who are the competitors? What's the gap? What's the biggest risk?
 
 Present findings concisely:
 
@@ -167,9 +163,9 @@ Here's what I found:
 - [Competitor 2]: [what they do, pricing, notable weakness]
 
 **Product assessment:**
-- [PO's read on market opportunity]
-- [PO's early adopter profile]
-- [PO's biggest risk]
+- [Market opportunity]
+- [Early adopter profile]
+- [Biggest risk]
 
 **Common patterns:**
 - [Pattern observed across solutions]
@@ -179,23 +175,17 @@ Does any of this change your thinking?
 
 Update the idea based on the founder's reaction.
 
-### Deep Research
+### With `--deep`
 
-Spawn parallel research tasks for comprehensive investigation. This is where the PO agent goes deepest:
+Spawn agents for comprehensive investigation (max 2):
 
-1. **Product Owner Task:** Spawn **product-owner** agent: "Full product analysis for this idea: [description]. Target user: [from Round 2]. Research market context, competitive landscape, user adoption, risks, and define success metrics. This is a new product concept — go deep."
+1. **Spawn product-owner** agent: "Full product analysis for this idea: [description]. Target user: [from Round 2]. Research market context, competitive landscape, user adoption, risks, and define success metrics. Go deep."
 
-2. **Market Data Task:** Spawn **web-researcher** agent (market): "Analyze the market for [idea]. Look for: market size, trends, existing funding, growth signals."
+2. **Spawn web-researcher** agent: "Research competitors, market size, user discussions, and technical feasibility for [idea]. Check Product Hunt, G2, Reddit, forums. For each competitor: features, pricing, user complaints, gaps."
 
-3. **Competitive Landscape Task:** Spawn **web-researcher** agent (competitors): "Deep dive on competitors to [idea]. Check Product Hunt, G2, Reddit, app stores. For each: features, pricing, user complaints, gaps."
+Wait for both agents to return.
 
-4. **Technical Feasibility Task:** Spawn **web-researcher** agent (technical): If there are technical unknowns, "Research APIs, libraries, services, and architectural patterns that would be needed."
-
-5. **User Research Task:** Spawn **web-researcher** agent (users): "Find discussions where [target user] talks about [problem]. Search Reddit, Twitter, forums. What language do they use? What have they tried?"
-
-Wait for ALL agents to return.
-
-**Synthesize:** The PO agent's analysis is the backbone. Web-researcher findings provide supporting evidence. Present the PO's recommendation prominently — it's the product verdict on whether this idea is worth pursuing.
+**Synthesize:** The PO agent's analysis is the backbone. Web-researcher findings provide supporting evidence. Present the PO's recommendation prominently.
 
 Save the research as a separate document at `docs/research/YYYY-MM-DD-description.md` and reference it from the feature brief.
 
@@ -425,17 +415,10 @@ After the feature brief is finalized:
 
 ## Agent Usage
 
-When spawning research tasks in Round 3, use these agents from `.claude/agents/`:
+**Default (no `--deep`): do NOT spawn agents.** Use WebSearch directly for market research, competitor analysis, and user discussions. This is sufficient for most ideas.
 
-**Light Research — spawn in parallel:**
-- Spawn **web-researcher** agent: "Research competitors and market context for [idea]. Focus on: [specific unknowns from Round 2]."
-- Spawn **product-owner** agent: "Light product assessment for: [idea]. Target user: [from Round 2]. Is there demand? Who are the competitors? What's the gap? One-page analysis."
-
-**Deep Research — spawn all in parallel:**
+**If `--deep` was passed**, spawn max 2 agents in parallel:
 - Spawn **product-owner** agent: "Full product analysis for: [idea]. Target user: [from Round 2]. Market context, competitive landscape, user adoption, risks, success metrics. Go deep."
-- Spawn **web-researcher** agent (market): "Analyze the market for [idea]. Look for: market size, trends, existing funding, growth signals."
-- Spawn **web-researcher** agent (competitors): "Deep dive on competitors to [idea]. Check Product Hunt, G2, Reddit, app stores. For each: features, pricing, user complaints, gaps."
-- Spawn **web-researcher** agent (technical): "Research technical feasibility for [specific uncertain aspects]. Check APIs, libraries, services needed."
-- Spawn **web-researcher** agent (users): "Find discussions where [target user] talks about [problem]. Search Reddit, Twitter, forums. What language do they use? What have they tried?"
+- Spawn **web-researcher** agent: "Research competitors, market size, user discussions, and technical feasibility for [idea]. Check Product Hunt, G2, Reddit, forums."
 
-Wait for ALL agents to return. The PO's analysis is the primary synthesis — web-researcher findings provide supporting evidence.
+Wait for both to return. The PO's analysis is the primary synthesis — web-researcher findings provide supporting evidence.

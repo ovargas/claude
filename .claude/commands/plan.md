@@ -21,6 +21,8 @@ You think in files, functions, and data flows — not features and user stories.
 
 **Flags:**
 - `--auto` — autonomous mode: skip founder confirmations at Phase 1 analysis acknowledgment and Phase 3 approval. The plan is auto-approved (`status: approved`) without asking. Use this for Ralph Wiggum loops or batch processing.
+- `--deep` — full agent mode: spawn agents for Phase 0 (architectural gate) and Phase 1 (codebase analysis). Use for complex features that touch multiple modules, introduce new stack dependencies, or require deep codebase tracing. Without this flag, the plan command does all analysis directly (Glob, Grep, Read) — faster and cheaper.
+- Flags combine: `/plan --auto --deep FEAT-007`
 
 ## Initial Response
 
@@ -61,9 +63,11 @@ Let me analyze the codebase to understand what exists and what needs to change.
 
 ## Process
 
-### Phase 0: Architectural Gate (Mandatory)
+### Phase 0: Architectural Gate
 
-**Before any codebase analysis**, spawn the software-architect agent as a gatekeeper:
+**Default (no `--deep`):** Do this check yourself. Read `stack.md` and the feature spec. Scan for any TBD items, missing technical decisions, or new stack dependencies this feature would introduce. If everything looks solid, note "Architectural gate: ✅ Passed" and proceed. If you spot gaps, HALT just as the architect agent would.
+
+**If `--deep` was passed:** Spawn the software-architect agent as a gatekeeper:
 
 - Spawn **software-architect** agent: "Run a dependency check for [feature name]. Read stack.md and the feature spec at [path]. Identify any TBD items or missing technical decisions that this feature requires. If gaps exist, HALT with options and recommendations. If no gaps, provide architectural guidance for the implementation."
 
@@ -391,20 +395,21 @@ After the plan is approved:
 
 ## Agent Usage
 
-Use these agents from `.claude/agents/` at the specified phases:
+**Default: do NOT spawn agents.** Do the analysis yourself using Glob, Grep, and Read directly. This is faster, cheaper, and sufficient for most features.
 
-**Phase 0 (Architectural Gate) — ALWAYS spawn first, alone:**
+**If `--deep` was passed**, use agents from `.claude/agents/` at the specified phases:
+
+**Phase 0 (Architectural Gate) — spawn only if the feature introduces new stack dependencies or touches infrastructure:**
 - Spawn **software-architect** agent: "Run a dependency check for [feature]. Read stack.md and the feature spec at [path]. Identify TBD items or missing decisions this feature requires. If gaps exist, HALT. If no gaps, provide architectural guidance."
-
-**This is mandatory. Do not skip it.** Even for simple features — the architect decides if the foundation is ready, not you.
+- **Skip this agent** if the feature is a straightforward addition following existing patterns (e.g., new CRUD endpoint, new UI page using existing components). You can do a quick TBD check yourself by reading stack.md.
 
 If the architect HALTs → stop the entire `/plan` command and present the halt to the founder.
 If the architect passes → continue to Phase 1.
 
-**Phase 1 (Codebase Analysis) — spawn in parallel:**
-- Spawn **codebase-locator** agent: "Find all files that will be affected by implementing [feature]. Include: source files, test files, configs, migrations, type definitions."
-- Spawn **pattern-finder** agent: "Find the closest existing implementation to [what we're building]. I need the complete pattern — every file that was part of it, in order."
-- Spawn **codebase-analyzer** agent: "Analyze how [the component we're modifying] currently works. Trace from [entry point] to [output]. I need file:line references for every step."
-- Spawn **docs-locator** agent: "Find any existing plans, decisions, or research related to [feature area]."
+**Phase 1 (Codebase Analysis) — spawn 2 agents max, not 4:**
+- Spawn **codebase-analyzer** agent: "Find all files affected by [feature] AND trace how the closest existing implementation works. Include: source files, test files, configs, patterns to follow with file:line references."
+- Spawn **docs-locator** agent: "Find any existing plans, decisions, or research related to [feature area]." — **Only if `docs/decisions/` has more than 5 files.** Otherwise, read them yourself.
 
-Wait for ALL Phase 1 agents to return before writing the plan. The plan's quality depends entirely on understanding the codebase first.
+The codebase-locator and pattern-finder roles are merged into a single codebase-analyzer call. This halves the agent cost with minimal quality loss — the analyzer can do both jobs in one pass.
+
+Wait for agents to return before writing the plan.

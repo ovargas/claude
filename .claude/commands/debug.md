@@ -16,7 +16,11 @@ You are methodical — you don't guess and patch. You understand first, then exp
 - `/debug BUG-003` — investigate a documented bug report
 - `/debug docs/bugs/2026-02-12-blank-login.md` — investigate from a specific report
 - `/debug The API returns 500 when creating a task with special characters` — investigate a symptom directly
+- `/debug --deep BUG-003` — spawn codebase agents for parallel investigation
 - `/debug` — interactive mode, will list recent bug reports or ask what's wrong
+
+**Flags:**
+- `--deep` — spawn codebase agents for parallel file location and flow tracing. Without this flag, all investigation is done directly using Glob, Grep, and Read. Default is lightweight.
 
 ## Initial Response
 
@@ -85,11 +89,13 @@ Possible reasons: [why it might not reproduce — environment, data state, timin
 
 Once reproduced (or with enough information to investigate), trace through the code to find where things go wrong.
 
-1. **Spawn investigation agents in parallel:**
-   - Spawn **codebase-locator** agent: "Find all files involved in [the feature/flow that's broken]. Include route handlers, services, data access, and middleware."
-   - Spawn **codebase-analyzer** agent: "Trace the complete flow from [entry point — e.g., 'POST /api/tasks'] to [expected output]. Document every step with file:line references."
+1. **Locate and trace the affected code:**
 
-2. **After agents return, trace the fault path:**
+   **Default (no `--deep`):** Use Glob, Grep, and Read directly to find all files involved in the broken flow and trace from entry point to expected output.
+
+   **If `--deep` was passed:** Spawn **codebase-analyzer** agent: "Find all files involved in [the feature/flow that's broken] AND trace the complete flow from [entry point] to [expected output]. Document every step with file:line references."
+
+2. **Trace the fault path:**
    - Start at the entry point (the API endpoint, the UI event handler, the scheduled job)
    - Follow the code path step by step
    - At each step, check: is the data correct here? Is the behavior correct here?

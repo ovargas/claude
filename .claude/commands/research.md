@@ -17,7 +17,11 @@ Your job is to find concrete, actionable answers — not to produce a literature
 - `/research --scope=market How do meal planning apps monetize?` — scoped to market research
 - `/research --scope=technical Should we use WebSockets or SSE for real-time updates?` — scoped to technical research
 - `/research --scope=codebase How does the current payment flow work?` — scoped to codebase investigation
+- `/research --deep How do meal planning apps monetize?` — spawn agents for parallel research
 - `/research` — interactive mode, will ask what to investigate
+
+**Flags:**
+- `--deep` — spawn research agents for parallel investigation. Without this flag, all research is done directly using WebSearch, Glob, Grep, and Read. Default is lightweight — no agents spawned.
 
 ## Initial Response
 
@@ -76,7 +80,7 @@ Starting research now.
 
 ### Phase 2: Execute Research
 
-Run research based on the scope. Spawn parallel tasks when sub-questions are independent.
+Run research based on the scope. Use WebSearch, Glob, Grep, and Read directly. Only spawn agents if `--deep` was passed (see Agent Usage).
 
 #### Market Research
 
@@ -255,18 +259,14 @@ Want to dig deeper into any aspect, or is this enough to move forward?
 
 ## Agent Usage
 
-When spawning parallel research tasks, use these agents from `.claude/agents/`:
+**Default (no `--deep`): do NOT spawn agents.** Use WebSearch for market/technical questions and Glob/Grep/Read for codebase questions. This is sufficient for most research tasks.
 
-**Market scope:**
-- Spawn **web-researcher** agent: "[Specific market research question with focus areas]"
+**If `--deep` was passed**, spawn agents based on scope (max 2):
 
-**Technical scope:**
-- Spawn **web-researcher** agent: "[Specific technical question about libraries, APIs, or approaches]"
-- Spawn **codebase-analyzer** agent (if about existing code): "[Specific question about how current implementation works]"
+**Market or technical scope:**
+- Spawn **web-researcher** agent: "[Specific research question with focus areas]"
 
-**Codebase scope — spawn in parallel:**
-- Spawn **codebase-locator** agent: "Find all files related to [topic]."
-- Spawn **codebase-analyzer** agent: "Analyze how [system/component] works. Trace the full flow."
-- Spawn **docs-locator** agent: "Find existing research, decisions, and plans related to [topic]."
+**Codebase scope:**
+- Spawn **codebase-analyzer** agent: "Find all files related to [topic] AND analyze how [system/component] works. Trace the full flow with file:line references."
 
-**Mixed scope — spawn all relevant agents in parallel** and synthesize when all return.
+**Mixed scope:** Spawn 1 web-researcher + 1 codebase-analyzer max. Synthesize when both return.

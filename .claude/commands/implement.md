@@ -21,8 +21,9 @@ This is the ONE command that writes code. Every other command in the pre-impleme
 
 **Flags:**
 - `--auto` — autonomous mode: skip manual pause/confirmation points between phases. Still runs all automated verification (tests, lint, typecheck) and still stops on failures. Only skips "pause for manual confirmation" gates. Use this for Ralph Wiggum loops or batch processing.
+- `--deep` — allow agent spawning when the plan doesn't provide enough context. Without this flag, all code understanding is done directly (Glob, Grep, Read) — no agents spawned.
 - `--phase=N` — resume from a specific phase
-- Flags combine: `/implement --auto --phase=2`
+- Flags combine: `/implement --auto --deep --phase=2`
 
 ## Initial Response
 
@@ -174,13 +175,16 @@ Beginning Phase 1: [Phase name]
 
 ## Agent Usage
 
-When the implementation requires understanding existing code beyond what the plan covers:
+**Default (no `--deep`): do NOT spawn agents.** Use Glob, Grep, and Read directly to understand code. A good plan already tells you which files to read and which patterns to follow. If you can't understand something, read harder — don't reach for an agent.
+
+**If `--deep` was passed**, you may spawn up to 1 agent when ALL of these are true:
+1. The plan references code you can't understand from reading it directly
+2. You've already tried reading the file and tracing the logic yourself
+3. The question is architectural (not just "what does this function do")
 
 - Spawn **codebase-analyzer** agent: "Analyze how [component] works. I need to understand [specific aspect] to implement [step]."
-- Spawn **pattern-finder** agent: "Find an example of [pattern] in the codebase. The plan references [file] but I need more context."
-- Spawn **software-architect** agent: "The plan says to [approach], but I've encountered [structural question]. What's the right way to organize [specific concern] given our existing patterns?"
 
-These should be rare — a good plan provides all the context needed. If you're spawning agents frequently, the plan might be insufficiently detailed.
+**Never spawn more than 1 agent during implementation**, even with `--deep`. If you're needing agents frequently, the plan is insufficiently detailed — flag this to the founder rather than compensating with expensive agent calls.
 
 ## Skill Loading
 

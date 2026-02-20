@@ -15,18 +15,21 @@ You don't gold-plate. You don't over-engineer. You ask: "What's the smallest ver
 **Usage patterns:**
 - `/feature` — interactive mode, will ask what the feature is
 - `/feature Add email notifications when a task is assigned` — starts with the provided description
-- `/feature --research=skip Add email notifications` — skips research
-- `/feature --research=light Add email notifications` — light research (codebase patterns, quick external look)
-- `/feature --research=deep Add email notifications` — deep research (competitors, technical feasibility, codebase analysis)
+- `/feature --deep Add email notifications` — full agent-powered research (competitors, technical feasibility, deep codebase analysis). Without `--deep`, research is done directly (no agents) — faster and cheaper.
 - `/feature --epic=EPIC-003` — creates a feature driven by a hub epic (reads epic and its decisions for context)
 - `/feature --ticket=PROJ-123` — pulls context from an existing tracker ticket
+
+**Flags:**
+- `--deep` — spawn research agents for codebase analysis and web research. Without this flag, all research is done directly using Glob, Grep, Read, and WebSearch. Default is lightweight — no agents spawned.
+- `--epic=EPIC-NNN` — pull context from a hub epic
+- `--ticket=PROJ-NNN` — pull context from an external tracker ticket
 
 ## Initial Response
 
 When this command is invoked:
 
-1. **Parse $ARGUMENTS for feature text, research flag, epic reference, and ticket reference:**
-   - Look for `--research=skip`, `--research=light`, or `--research=deep`
+1. **Parse $ARGUMENTS for feature text, flags, epic reference, and ticket reference:**
+   - Look for `--deep` (enables agent-powered research; without it, all research is done directly)
    - Look for `--epic=EPIC-NNN` to pull context from the hub
    - Look for `--ticket=XXXX` to pull context from an external tracker
    - Everything else is the feature description
@@ -123,10 +126,9 @@ Is that right?
 
 This is not a formality. This is the most valuable part of the process for a solo founder, because the biggest risk isn't building something wrong — it's building something unnecessary.
 
-**If the feature is NOT driven by an epic** (repo-level feature), spawn the product-owner agent for a light sanity check:
-- Spawn **product-owner** agent: "Quick YAGNI assessment for this feature in [product context]: [feature description]. Is this solving a real user problem? Is there evidence of demand? One-paragraph assessment."
-
 **If the feature IS driven by an epic**, the PO already assessed it at the epic level — note the epic's PO recommendation and skip to the scope test (necessity and timing were already validated).
+
+**If the feature is NOT driven by an epic**, apply the YAGNI challenge yourself using the questions below. Do NOT spawn a product-owner agent for this — you have the product context from stack.md and can make this assessment directly.
 
 Run through these questions honestly:
 
@@ -171,11 +173,15 @@ If the founder overrides a SKIP/DEFER recommendation, note it in the spec: "YAGN
 
 ### Determine Research Level
 
-If the user provided a `--research` flag, use it. Otherwise, recommend based on what you've learned:
+**Default (no `--deep`):** Do research yourself using Glob, Grep, Read, and WebSearch. This covers codebase patterns and quick external scans — no agents spawned.
 
-- **Skip** — The feature follows an existing pattern in the codebase closely. Example: "Add another CRUD endpoint following the same pattern as users."
-- **Light** — The feature is clear but has some unknowns: how competitors handle it, which library to use, or what UI pattern fits best. This is the default.
-- **Deep** — The feature involves technical uncertainty, touches multiple services, or requires understanding external APIs/services you haven't worked with.
+**If `--deep` was passed:** Spawn research agents (see Agent Usage) for deep codebase analysis and external research.
+
+Decide how much research is needed based on what you've learned:
+
+- **Minimal** — The feature follows an existing pattern in the codebase closely. Note it and move on.
+- **Moderate** — The feature is clear but has some unknowns: how competitors handle it, which library to use, or what UI pattern fits best. Do it yourself with Glob/Grep/WebSearch.
+- **Deep** — The feature involves technical uncertainty, touches multiple services, or requires understanding external APIs/services. Use `--deep` agents if available, or do thorough manual research.
 
 ### Skip Research
 - Note in the spec: "Research: Skipped (follows established patterns)"
@@ -528,23 +534,12 @@ Does this breakdown make sense? Too granular? Too coarse?
 
 ## Agent Usage
 
-When spawning research or analysis tasks, use these agents from `.claude/agents/`:
+**Default (no `--deep`): do NOT spawn agents.** Do all research yourself using Glob, Grep, Read, and WebSearch. This covers context gathering, codebase patterns, existing docs, and YAGNI assessment — all without agent overhead.
 
-**Phase 1 (Establish context) — spawn in parallel:**
-- Spawn **codebase-locator** agent: "Find all files related to [feature area]. Focus on [relevant directories from stack.md]."
-- Spawn **docs-locator** agent: "Find existing feature briefs, research, plans, and decisions related to [feature topic]."
-
-**Phase 2 (YAGNI Check — only for repo-level features, NOT epic-driven):**
-- Spawn **product-owner** agent: "Quick YAGNI assessment for: [feature description]. Product context: [from stack.md]. Is this solving a real user problem? Evidence of demand? One-paragraph assessment."
-
-**Phase 3 Light Research — spawn as needed:**
-- Spawn **pattern-finder** agent: "Find the closest existing implementation to [what we're building]. Show the complete pattern across all layers."
-- Spawn **web-researcher** agent: "Research [specific unknown — e.g., 'best UX patterns for notification preferences in SaaS apps']."
-
-**Phase 3 Deep Research — spawn in parallel:**
-- Spawn **codebase-analyzer** agent: "Analyze how [existing related system] works. Trace the full flow from [entry point] to [output]."
-- Spawn **codebase-locator** agent: "Find all integration points that [new feature] would need to connect to."
-- Spawn **pattern-finder** agent: "Find the most similar existing feature in the codebase. Show the full implementation pattern."
+**If `--deep` was passed:** Spawn research agents for Phase 3 only. Maximum 2 agents in parallel:
+- Spawn **codebase-analyzer** agent: "Analyze how [existing related system] works and find the closest implementation pattern. Trace from entry to output with file:line references."
 - Spawn **web-researcher** agent: "Research [specific external question — competitors, UX patterns, technical approaches]."
 
-Wait for ALL agents to return before synthesizing and presenting findings to the founder.
+**Never spawn agents for Phase 1 or Phase 2**, regardless of flags. Context gathering and YAGNI checks are always done directly.
+
+Wait for any agents to return before synthesizing and presenting findings.

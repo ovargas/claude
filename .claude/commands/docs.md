@@ -223,8 +223,7 @@ If `docs/documentation/` doesn't exist, create it.
 
 ## Agent Usage
 
-When the codebase is large or unfamiliar:
+**Default: do NOT spawn agents.** Use Glob, Grep, and Read directly to find config files, trace flows, and locate existing docs. This is a sonnet command — keep it fast and cheap.
 
-- Spawn **codebase-analyzer** agent: "Trace the [feature] flow from entry point to output. I need to document how it works."
-- Spawn **codebase-locator** agent: "Find all configuration files, env var reads, and feature flags in the codebase."
-- Spawn **docs-locator** agent: "Find all existing documentation, decision records, and READMEs."
+**Only spawn 1 agent if the codebase is very large and you need deep flow tracing:**
+- Spawn **codebase-analyzer** agent: "Trace the [feature] flow from entry point to output AND find all configuration files, env var reads, and feature flags."

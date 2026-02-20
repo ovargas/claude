@@ -17,6 +17,10 @@ This is the founder's "second pair of eyes" since they're working solo.
 - `/review --staged` — review only staged changes
 - `/review path/to/file.ext` — review a specific file
 - `/review FEAT-003` — review all changes related to a feature (matches against the plan's file list)
+- `/review --deep` — spawn pattern-finder and security-reviewer agents for thorough analysis
+
+**Flags:**
+- `--deep` — spawn agents for pattern matching and security review. Without this flag, all review is done directly by reading the diff, checking patterns with Grep, and applying security knowledge. Default is lightweight.
 
 ## Process
 
@@ -34,11 +38,12 @@ This is the founder's "second pair of eyes" since they're working solo.
 
 3. **Read the changed files fully.** Don't review from diffs alone — understand the full file context.
 
-### Step 2: Spawn Review Agents
+### Step 2: Pattern and Security Analysis
 
-Run these in parallel for comprehensive coverage:
+**Default (no `--deep`):** Do this yourself. Use Grep to find existing patterns for the type of changes made (e.g., search for similar endpoints, components). Review the changed files for security issues directly — check auth, input validation, data exposure, SQL injection, etc.
 
-- Spawn **pattern-finder** agent: "Find the existing codebase patterns for [the type of changes made — e.g., API endpoints, components, tests]. I need to verify the new code follows established conventions."
+**If `--deep` was passed:** Spawn in parallel:
+- Spawn **pattern-finder** agent: "Find the existing codebase patterns for [the type of changes made]. I need to verify the new code follows established conventions."
 - Spawn **security-reviewer** agent: "Review these files for security issues: [list of changed files]. Focus on [relevant area — auth, input validation, data exposure, etc.]."
 
 Wait for both to return.

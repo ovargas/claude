@@ -15,9 +15,10 @@ This command runs in the **hub repository only**. It produces the product-level 
 **Usage patterns:**
 - `/epic` — interactive mode, will ask about the initiative
 - `/epic Add multilingual support for all user-facing content` — starts with the provided description
-- `/epic --research=skip Add multilingual support` — skips research phase
-- `/epic --research=light Add multilingual support` — light product research
-- `/epic --research=deep Add multilingual support` — deep market and user research
+- `/epic --deep Add multilingual support` — spawn PO and architect agents for full analysis
+
+**Flags:**
+- `--deep` — spawn product-owner and software-architect agents for Phases 2-3. Without this flag, you do the product analysis and technical routing yourself using your knowledge, stack.md, and WebSearch. Default is lightweight — no agents spawned.
 
 ## Required Reading
 
@@ -128,21 +129,13 @@ Don't worry about technical details — focus on what changes for users.
 
 **Goal:** Get the product owner's perspective on whether this is worth pursuing and for whom.
 
-### Determine Research Level
+### Product Analysis
 
-If the user provided a `--research` flag, use it. Otherwise, recommend:
+**Default (no `--deep`):** Do the product analysis yourself. Read stack.md for product context, use WebSearch for quick market validation if needed. Assess: is this worth pursuing? For whom? What's the risk? Define success metrics.
 
-- **Skip** — The initiative is well-understood, the founder has strong domain expertise
-- **Light** — The initiative is clear but competitive context or user demand data would help
-- **Deep** — The initiative is exploratory, the market is unclear, or significant investment is at stake
+**If `--deep` was passed:** Spawn **product-owner** agent: "Analyze this initiative from a product perspective: [initiative description]. Research the market context, user adoption implications, risks, and define success metrics."
 
-### Spawn the Product Owner Agent
-
-- Spawn **product-owner** agent: "Analyze this initiative from a product perspective: [initiative description]. Research the market context, user adoption implications, risks, and define success metrics. The product is [product description from stack.md]. The target users are [user context from conversation]."
-
-**Wait for the PO analysis before proceeding.**
-
-### Present the PO's findings:
+### Present findings:
 
 ```
 **Product analysis complete.**
@@ -170,11 +163,11 @@ If the PO recommends PASS and the founder overrides, note it: "PO flag: Founder 
 
 From `stack.md`, load the teams section — each repo's name, description, responsibility, and stack summary.
 
-### Spawn the Software Architect Agent
+### Technical Routing
 
-- Spawn **software-architect** agent: "Given this initiative: [description], and these teams: [list from teams registry with descriptions], identify which repos are affected and why. For each affected repo, describe what kind of work it would require (new endpoints, new UI, data model changes, etc.). Identify any cross-team dependencies — where one repo's work depends on or affects another's. Read the teams registry from stack.md for context."
+**Default (no `--deep`):** Do the routing yourself. You have the teams registry and the initiative description — determine which repos are affected, what work each needs, and what cross-team dependencies exist.
 
-**Wait for the architect's analysis.**
+**If `--deep` was passed:** Spawn **software-architect** agent: "Given this initiative: [description], and these teams: [list from teams registry with descriptions], identify which repos are affected and why. For each affected repo, describe what kind of work it would require. Identify cross-team dependencies."
 
 ### Present the routing:
 
@@ -437,14 +430,16 @@ If `docs/epics/` doesn't exist, create it with a `.gitkeep` file.
 
 ## Agent Usage
 
+**Default (no `--deep`): do NOT spawn agents.** Do product analysis and technical routing yourself. Use WebSearch for market context if needed.
+
+**If `--deep` was passed**, spawn up to 2 agents total:
+
 **Phase 2 (Product Analysis):**
 - Spawn **product-owner** agent: "Analyze this initiative from a product perspective: [description]. Research market, users, risks, define success metrics."
 
-**Phase 2 (Research support — spawn in parallel with PO if deep research):**
-- Spawn **web-researcher** agent (market): "Research market for [initiative]. Trends, funding, demand signals."
-- Spawn **web-researcher** agent (users): "Find user discussions about [problem]. Reddit, forums, reviews."
-
 **Phase 3 (Technical Routing):**
 - Spawn **software-architect** agent: "Given initiative [description] and teams [list from registry], identify affected repos, cross-team dependencies, and agreements needed."
+
+**Do NOT spawn web-researcher agents.** Use WebSearch directly if you need market or user data — it's cheaper than a dedicated agent.
 
 Wait for agents to return before proceeding to the next phase.

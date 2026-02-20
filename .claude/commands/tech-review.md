@@ -18,6 +18,10 @@ This is the review you'd do before starting a major feature, after a rapid devel
 - `/tech-review --focus=dependencies` — focused review on a specific concern
 - `/tech-review --focus=architecture` — focused on structural patterns
 - `/tech-review --focus=debt` — focused on technical debt
+- `/tech-review --deep` — spawn agents for parallel codebase analysis
+
+**Flags:**
+- `--deep` — spawn codebase agents for parallel analysis (file mapping, pattern detection, doc review). Without this flag, all analysis is done directly using Glob, Grep, and Read. Default is lightweight.
 - `/tech-review --focus=performance` — focused on performance risks
 - `/tech-review --focus=testing` — focused on test coverage and quality
 
@@ -51,10 +55,11 @@ I'll examine [dimensions being checked] and report findings with specific refere
 
 Map the territory before judging it.
 
-1. **Spawn analysis agents in parallel:**
-   - Spawn **codebase-locator** agent: "Map the full directory structure of [scope]. Categorize files by type: source, test, config, documentation, generated. Report file counts and organization patterns."
-   - Spawn **pattern-finder** agent: "Identify the major patterns used in [scope]: file organization, naming conventions, error handling patterns, state management approach, data access patterns. Show 2-3 examples of each pattern found."
-   - Spawn **docs-locator** agent: "Find all documentation, decision records, and architecture docs related to [scope]."
+1. **Map the codebase:**
+
+   **Default (no `--deep`):** Use Glob to map directory structure, Grep to identify patterns (naming conventions, error handling, data access), and Read for key files and docs. This is sufficient for most reviews.
+
+   **If `--deep` was passed:** Spawn **codebase-analyzer** agent: "Map the full directory structure of [scope], identify major patterns (file organization, naming conventions, error handling, state management, data access), and find all documentation and decision records. Show 2-3 examples of each pattern found."
 
 2. **Read `package.json` / `requirements.txt` / equivalent** — understand dependencies.
 
@@ -110,7 +115,7 @@ Evaluate each relevant dimension. For a full review, cover all of them. For a fo
 
 #### Security Risks
 
-Spawn **security-reviewer** agent on the scope if security is a concern.
+Review security directly — check for common issues (auth bypass, injection, data exposure). Only spawn **security-reviewer** agent if `--deep` was passed and security is the primary concern.
 
 ### Phase 3: Synthesize and Report
 
