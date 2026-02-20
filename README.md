@@ -431,6 +431,98 @@ The `backlog.lock` file on main prevents both from picking the same item.
 | `/debug` | Service | Investigate an issue | Diagnosis |
 | `/status` | Any | Project status briefing | Status report |
 | `/handoff` | Any | Session continuity note | Handoff document |
+| `/docs` | Any | Generate project documentation | Setup guides, config references, runbooks |
+
+## Command Options
+
+Many commands support flags to customize behavior:
+
+### Global Options
+
+#### `--auto` — Autonomous Mode
+Skip confirmations and manual pause points. Use for automated workflows or "Ralph Wiggum loops" (repeated execution patterns).
+
+**Available in:**
+- `/plan --auto FEAT-007` — auto-approve the plan without asking
+- `/implement --auto` — skip manual pause points between phases
+- `/next --auto` — automatically pick highest-priority item without prompts
+
+Flags can be combined: `/plan --auto --deep FEAT-007`
+
+#### `--deep` — Agent-Powered Mode
+Spawn specialized research agents for thorough analysis. Without this flag, commands use direct tools (Glob, Grep, Read, WebSearch) — faster and cheaper.
+
+**Available in:**
+- `/idea --deep` — spawn product-owner and web-researcher agents
+- `/epic --deep` — spawn product-owner and software-architect agents
+- `/feature --deep` — spawn agents for codebase analysis and web research
+- `/research --deep` — spawn agents based on research scope
+- `/plan --deep` — spawn software-architect and codebase-analyzer agents
+- `/implement --deep` — allow agent spawning when plan lacks context
+
+**When to use:** Complex features touching multiple modules, introducing new dependencies, or requiring deep codebase tracing.
+
+### Command-Specific Options
+
+#### `/init` Options
+- `--hub` — initialize as a hub repository (product brain)
+- `--service` — initialize as a service repository (implementation)
+- `--from=../path` — bootstrap from another repo's stack.md
+- `--minimal` — create structure only, skip the interview
+
+#### `/feature` Options
+- `--epic=EPIC-NNN` — create feature driven by a hub epic
+- `--ticket=PROJ-123` — pull context from an external tracker ticket
+- `--deep` — spawn agents for research (default: direct tools)
+
+#### `/epic` Options
+- `--deep` — spawn product-owner and architect agents (default: direct analysis)
+
+#### `/research` Options
+- `--scope=market|technical|codebase` — limit research to a specific domain
+- `--deep` — spawn specialized research agents (default: direct WebSearch/Grep/Read)
+
+#### `/plan` Options
+- `--auto` — skip confirmations, auto-approve the plan
+- `--deep` — spawn agents for architectural gate and codebase analysis
+- `--story=S-003` — plan a specific story instead of full feature
+
+#### `/implement` Options
+- `--auto` — skip manual pause/confirmation points (still runs all automated verification)
+- `--deep` — allow agent spawning when plan doesn't provide enough context
+- `--phase=N` — resume from a specific phase after a session break
+- `--story=S-005` — implement a specific story
+
+#### `/next` Options
+- `--auto` — automatically pick highest-priority item, skip all prompts
+- Can also specify:
+  - Story ID: `/next S-005` — pick a specific story
+  - Service: `/next backend` — pick next item for a specific service
+  - Feature: `/next FEAT-003` — pick next unfinished story from a feature
+
+#### `/docs` Options
+- `--update <path>` — update an existing doc to match current codebase state
+
+### Examples with Flags
+
+```bash
+# Autonomous feature workflow
+/feature --auto --deep Add user authentication
+/plan --auto --deep FEAT-001
+/next --auto
+# In worktree:
+/implement --auto --deep
+
+# Epic-driven feature with lightweight research
+/epic Add multilingual support           # in hub, no --deep for speed
+/feature --epic=EPIC-001                  # in service, reads epic constraints
+
+# Resume interrupted implementation
+/implement --phase=3                      # pick up where you left off
+
+# Quick documentation update
+/docs --update docs/documentation/setup-guide.md
+```
 
 ## Key Design Principles
 
