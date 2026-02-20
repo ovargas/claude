@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Code review of staged or recent changes against patterns, security, and acceptance criteria | opus |
+---
+name: review
+description: CCode review of staged or recent changes against patterns, security, and acceptance criteria
+model: opus
+---
 
 # Review
 

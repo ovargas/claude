@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Capture, research, and spec a feature for an existing product — from rough idea to actionable stories | opus |
+---
+name: feature
+description: Capture, research, and spec a feature for an existing product — from rough idea to actionable stories
+model: opus
+---
 
 # Feature Intake
 

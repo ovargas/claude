@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Technical health check on a component, module, or the full codebase — architecture, debt, patterns, and risks | opus |
+---
+name: tech-review
+description: Technical health check on a component, module, or the full codebase — architecture, debt, patterns, and risks
+model: opus
+---
 
 # Technical Review
 

@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Investigate a question thoroughly — market, technical, or codebase — and document findings | opus |
+---
+name: research
+description: Investigate a question thoroughly — market, technical, or codebase — and document findings
+model: opus
+---
 
 # Research
 

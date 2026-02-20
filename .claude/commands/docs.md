@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Generate or update project documentation — setup guides, config references, runbooks, and operational notes | sonnet |
+---
+name: docs
+description: Document a project — setup guides, config references, runbooks, and operational notes
+model: sonnet
+---
 
 # Docs
 

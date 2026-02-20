@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Create a pull request with proper title, summary, and testing notes | sonnet |
+---
+name: pr
+description: Create a pull request with proper title, summary, and testing notes
+model: sonnet
+---
 
 # Pull Request
 

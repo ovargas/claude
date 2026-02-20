@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Execute an implementation plan phase by phase with verification at each step | opus |
+---
+name: implement
+description: Execute a technical implementation plan phase by phase, with verification at each step
+model: opus
+---
 
 # Implement
 

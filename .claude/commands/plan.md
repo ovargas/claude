@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Create a detailed technical implementation plan from an approved feature spec | opus |
+---
+name: plan
+description: Create a detailed technical implementation plan from an approved feature spec
+model: opus
+---
 
 # Implementation Plan
 

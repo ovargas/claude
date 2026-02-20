@@ -1,6 +1,9 @@
-| description | model |
-|---|---|
-| Pick up the next item from the backlog, lock it, create a worktree, and prepare for implementation | sonnet |
+---
+name: next
+description: Pick up the next item from the backlog, lock it, create a worktree,
+and prepare for implementation
+model: sonnet
+---
 
 # Next
 

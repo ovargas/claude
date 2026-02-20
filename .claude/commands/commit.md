@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Create clean, atomic git commits following project conventions | sonnet |
+---
+name: commit
+description: Create clean, atomic git commits following project conventions
+model: sonnet
+---
 
 # Commit
 

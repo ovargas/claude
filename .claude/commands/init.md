@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Initialize a repository with stack definition, project structure, and team configuration | opus |
+---
+name: init
+description: Initialize a repository with stack definition, project structure, and team configuration
+model: opus
+---
 
 # Repository Initialization
 

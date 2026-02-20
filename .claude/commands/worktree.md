@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Create, remove, or list git worktrees for branch-based parallel work | sonnet |
+---
+name: worktree
+description: Create, remove, or list git worktrees for branch-based parallel work
+model: sonnet
+---
 
 # Worktree
 

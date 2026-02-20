@@ -1,6 +1,7 @@
 ---
 name: git-practices
 description: Git conventions for branches, commits, and pull requests. Load this skill whenever creating branches, writing commit messages, or opening PRs. Trigger on any git workflow operation — commits, branches, pull requests, or merge operations.
+model: sonnet
 ---
 
 # Git Practices

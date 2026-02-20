@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Investigate a bug — reproduce it, trace through code, find the root cause, and document findings | opus |
+---
+name: debug
+description: Investigate a bug — reproduce it, trace through code, find the root cause, and document findings
+model: opus
+---
 
 # Debug
 

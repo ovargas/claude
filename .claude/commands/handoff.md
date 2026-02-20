@@ -1,6 +1,8 @@
-| description | model |
-|---|---|
-| Capture session state for clean context transfer between sessions | sonnet |
+---
+name: handoff
+description: Capture session state for clean context transfer between sessions
+model: sonnet
+---
 
 # Handoff
 
