@@ -201,8 +201,8 @@ gh pr create --base develop --title "<title>" --body "..."
 2. **If a lock exists:**
    - Remove this branch's entry from the lockfile
    - If no more entries remain, delete the lockfile entirely
-3. **Update `docs/backlog.md`** — move the item from Doing to Done:
-   - Change `- [>]` to `- [x]`
+3. **Update `docs/backlog.md`** — move the item to Done:
+   - Change `- [>]` or `- [=]` to `- [x]` (handles both Doing and Implemented states)
    - Add PR reference: `[x] S-003: Story title — PR #[number]`
 4. **Commit both changes on the feature branch:**
    ```bash

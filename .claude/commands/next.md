@@ -82,7 +82,25 @@ Before picking up the item, check:
      Moving to the next available item...
      ```
 
-2. **Is there already work in Doing for THIS worktree?** If working from a worktree, check if this session's branch already has a lock. If yes:
+2. **Is there already work in Doing or Implemented for THIS worktree?** Check if this session's branch already has a lock. If yes, check the backlog marker:
+
+   **If the item is `[=]` (Implemented, pending PR):**
+
+   **If `--auto`:** Skip the choice — run `/pr` to submit the completed work. Do not pick a new item when there's implemented work waiting for a PR.
+
+   **If NOT `--auto`:**
+   ```
+   You have completed work waiting for a PR:
+   - [Item] — branch: feat/CTR-12 — implemented, pending PR
+
+   Options:
+   1. Submit it now (run `/pr`)
+   2. Park it and pick up [new item] instead
+
+   What would you like to do?
+   ```
+
+   **If the item is `[>]` (Doing, implementation in progress):**
 
    **If `--auto`:** Skip the choice — run `/implement` to continue the in-progress work. Do not pick a new item when there's already work in progress for this worktree.
 

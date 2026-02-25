@@ -32,7 +32,17 @@ When this command is invoked:
 1. **Determine what to implement:**
    - If a plan path was provided, read it
    - If a story was specified, find its parent plan in `docs/plans/`
-   - If bare `/implement`, check `docs/backlog.md` for items in Doing status. Read the associated plan.
+   - If bare `/implement`, check `docs/backlog.md` for items in Doing (`[>]`) status. Read the associated plan.
+   - If the item is marked as Implemented (`[=]`), **STOP:**
+     ```
+     ✅ This story is already implemented (marked [=] in the backlog).
+     It's waiting for a PR. Run `/pr` to commit and create the pull request.
+     ```
+   - If the item is marked as Done (`[x]`), **STOP:**
+     ```
+     ✅ This story is already done (marked [x] in the backlog).
+     Nothing to implement. Run `/next` to pick up new work.
+     ```
    - If nothing is in progress: "Nothing in Doing. Run `/next` to pick up work first."
 
 2. **Check plan approval status:**
@@ -156,7 +166,22 @@ Beginning Phase 1: [Phase name]
    - Mark completed phases with checkmarks
    - Note any deviations from the plan with brief explanations
 
-4. **Present completion:**
+4. **Update the backlog:**
+   - Read `docs/backlog.md` and find the item currently in Doing (`[>]`) for this branch/story
+   - Change `[>]` to `[=]` (implemented, pending PR):
+     ```
+     - [=] S-003: Story title — `feat/CTR-12` — implemented, pending PR
+     ```
+   - The `[=]` marker means: code is done, tests pass, but it hasn't been committed/PR'd yet
+   - This prevents accidentally re-planning or re-implementing a completed story
+   - Commit this backlog update along with the plan update:
+     ```bash
+     git add docs/backlog.md docs/plans/[plan-file]
+     git commit -m "chore(backlog): mark S-003 implemented, pending PR [TICKET-ID]"
+     ```
+   - **Note:** The lock in `backlog.lock` stays active until `/pr` releases it — the work is done but the branch still owns the item
+
+5. **Present completion:**
    ```
    Implementation complete for [story/feature].
 
@@ -164,11 +189,12 @@ Beginning Phase 1: [Phase name]
    - [N] files modified, [N] files created
    - All automated checks passing
    - [N] manual verification items remaining
+   - Backlog updated: [>] Doing → [=] Implemented (pending PR)
 
    **Next steps:**
    - Run `/review` for a code review before committing
    - Complete manual testing items above
-   - Run `/commit` when ready
+   - Run `/pr` when ready (auto-commits and creates the PR)
    ```
 
 ---

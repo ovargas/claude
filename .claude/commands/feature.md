@@ -472,10 +472,14 @@ Does this breakdown make sense? Too granular? Too coarse?
 4. **After approval**, update the feature spec's Stories section with the final list.
 
 5. **Add stories to the backlog:**
-   - If `docs/backlog.md` exists, append each story to the Ready section:
-   ```markdown
-   - [ ] [Story title] | feature:[feature-name] | service:[be|fe] | spec:docs/features/YYYY-MM-DD-feature-name.md
-   ```
+   - If `docs/backlog.md` exists:
+     - Find the `## Ready` section (NOT `## Inbox` — stories from `/feature` are specced and ready for work)
+     - If no `## Ready` section exists, create it between `## Doing` and `## Inbox` (or at the top if neither exists)
+     - Append each story under `## Ready`:
+     ```markdown
+     - [ ] [Story title] | feature:[feature-name] | service:[be|fe] | spec:docs/features/YYYY-MM-DD-feature-name.md
+     ```
+   - **IMPORTANT:** Stories go to `## Ready`, never `## Inbox`. They have a spec, acceptance criteria, and story breakdown — they are ready for `/next` to pick up.
    - If an external tracker is configured, create cards linked to the feature spec.
 
 ---

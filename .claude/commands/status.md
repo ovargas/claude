@@ -50,9 +50,9 @@ Plan: [docs/plans/... | not yet planned]
 
 **Stories:**
 - [x] [Story 1] — done
-- [>] [Story 2] — in progress
-- [ ] [Story 3] — ready
-- [ ] [Story 4] — ready (blocked by Story 3)
+- [=] [Story 2] — implemented, pending PR → run `/pr`
+- [>] [Story 3] — in progress
+- [ ] [Story 4] — ready
 
 **Open questions:** [count, or "none"]
 **Last activity:** [date and what happened]
@@ -124,12 +124,13 @@ Plan: [docs/plans/... | not yet planned]
 3. **[Item]** — [context]
 
 ## Backlog Snapshot
-| Column | Count |
-|---|---|
-| Inbox | [N] |
-| Ready | [N] |
-| Doing | [N] |
-| Done | [N] |
+| Column | Marker | Count |
+|---|---|---|
+| Inbox | (untagged) | [N] |
+| Ready | `[ ]` | [N] |
+| Doing | `[>]` | [N] |
+| Implemented | `[=]` | [N] |
+| Done | `[x]` | [N] |
 
 ## Attention Needed
 [Things that need the founder's input or decision — open questions, stale items, blockers]
@@ -228,7 +229,8 @@ Plan: [docs/plans/... | not yet planned]
 
 While reading the project state, flag anything that looks off:
 
-- **Stuck work:** Something in Doing for more than a few days with no handoff or progress
+- **Stuck work:** Something in Doing (`[>]`) for more than a few days with no handoff or progress
+- **Implemented but not PR'd:** Items marked `[=]` (implemented) — remind the founder to run `/pr` to ship them
 - **Orphaned stories:** Stories in the backlog that don't link to a feature spec
 - **Missing plans:** Features with stories in Ready but no implementation plan
 - **Stale specs:** Feature specs in draft status for more than 2 weeks
