@@ -26,9 +26,13 @@ This command uses the `sonnet` model because it's a read-and-organize operation.
 - `/next backend` — pick the next item tagged for a specific service
 - `/next FEAT-003` — pick the next unfinished story from a specific feature
 - `/next --auto` — pick highest-priority item without asking, skip all prompts
+- `/next --here` — work on the current branch, skip worktree creation
 
 **Flags:**
 - `--auto` — autonomous mode: automatically pick the highest-priority ready item, skip the "continue in-progress or pick new" choice (always picks new if nothing is in Doing for this worktree, continues in-progress if something is), and skip all confirmations. Use this for Ralph Wiggum loops or batch processing.
+- `--here` — skip worktree creation and work directly on the current branch. Creates the feature branch in the current repo instead of a separate worktree. Useful for simple features, solo work, or repos where worktrees aren't practical. The lock still applies — parallel work just happens on branches instead of worktrees.
+
+Flags combine: `/next --auto --here` picks the highest-priority item, creates a branch in place, and skips all prompts.
 
 ## Process
 
@@ -153,7 +157,7 @@ locks:
   - item: "S-003"
     feature: "FEAT-007"
     branch: "feat/CTR-12"
-    worktree: "../repo-worktrees/feat/CTR-12"
+    worktree: "../repo-worktrees/feat/CTR-12"  # or "in-place" if --here
     started: "2026-02-12T14:30:00"
 ```
 
@@ -173,9 +177,9 @@ If the lockfile already exists with other entries, append the new lock — don't
 
 This commit happens on the main branch so all worktrees can see it immediately.
 
-### Step 7: Create the Worktree
+### Step 7: Create the Branch (worktree or in-place)
 
-Now that the item is locked, create the worktree safely:
+**If `--here` was NOT passed (default)** — create a worktree:
 
 1. **Check we're in the main repo directory** (not inside a worktree already):
    ```bash
@@ -197,6 +201,20 @@ Now that the item is locked, create the worktree safely:
    ../{repo}-worktrees/<branch-name>
    ```
 
+**If `--here` was passed** — create a branch in place:
+
+1. **Create and switch to the feature branch:**
+   ```bash
+   git checkout -b <branch-name>
+   ```
+
+2. **Verify the branch:**
+   ```bash
+   git branch --show-current
+   ```
+
+No worktree is created. Work happens directly in the current repo directory.
+
 ### Step 8: Load Context
 
 Gather everything the implementation session will need:
@@ -207,6 +225,8 @@ Gather everything the implementation session will need:
 4. **Read any referenced decision** records
 
 ### Step 9: Present the Work (then STOP)
+
+**If using a worktree (default):**
 
 ```
 **Next up:** [Story title]
@@ -234,6 +254,33 @@ Gather everything the implementation session will need:
 1. Open a new Claude Code session in the worktree directory:
    `cd ../repo-worktrees/feat/CTR-12`
 2. Run `/implement` to start building
+```
+
+**If using `--here` (in-place branch):**
+
+```
+**Next up:** [Story title]
+**From feature:** [Feature name] (FEAT-NNN)
+**Service:** [backend|frontend|etc.]
+**Ticket:** [TICKET-ID]
+
+**Branch:** feat/CTR-12 (current directory)
+
+**What to build:**
+[Acceptance criteria from the story]
+
+**Plan reference:** [docs/plans/... or "No plan — consider running /plan first"]
+
+**Context loaded:**
+- Feature spec: [path]
+- Implementation plan: [path]
+- Research: [path or "none"]
+- Related decisions: [path or "none"]
+
+**Backlog lock:** ✅ Item locked for this branch
+
+**Next steps:**
+Run `/implement` to start building
 ```
 
 ---
