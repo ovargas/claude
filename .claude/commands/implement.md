@@ -23,11 +23,19 @@ This is the ONE command that writes code. Every other command in the pre-impleme
 - `--auto` — autonomous mode: skip manual pause/confirmation points between phases. Still runs all automated verification (tests, lint, typecheck) and still stops on failures. Only skips "pause for manual confirmation" gates. Use this for Ralph Wiggum loops or batch processing.
 - `--deep` — allow agent spawning when the plan doesn't provide enough context. Without this flag, all code understanding is done directly (Glob, Grep, Read) — no agents spawned.
 - `--phase=N` — resume from a specific phase
+- `--fresh` — delete any existing checkpoint and start from scratch
 - Flags combine: `/implement --auto --deep --phase=2`
 
 ## Initial Response
 
 When this command is invoked:
+
+0. **Checkpoint check (load the `checkpoints` skill):**
+   - If `--fresh` was passed, delete `docs/checkpoints/implement-*.md` matching this item and proceed fresh
+   - Check `docs/checkpoints/implement-<ID>.md` — if it exists, read it, show the resume summary, and skip to the first incomplete phase
+   - If no checkpoint, proceed normally
+   - After each phase completes, write/update the checkpoint file following the checkpoints skill protocol
+   - **On successful completion:** delete the checkpoint file (bundle deletion into the final commit)
 
 1. **Determine what to implement:**
    - If a plan path was provided, read it

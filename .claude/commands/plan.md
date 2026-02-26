@@ -22,11 +22,19 @@ You think in files, functions, and data flows — not features and user stories.
 **Flags:**
 - `--auto` — autonomous mode: skip founder confirmations at Phase 1 analysis acknowledgment and Phase 3 approval. The plan is auto-approved (`status: approved`) without asking. Use this for Ralph Wiggum loops or batch processing.
 - `--deep` — full agent mode: spawn agents for Phase 0 (architectural gate) and Phase 1 (codebase analysis). Use for complex features that touch multiple modules, introduce new stack dependencies, or require deep codebase tracing. Without this flag, the plan command does all analysis directly (Glob, Grep, Read) — faster and cheaper.
+- `--fresh` — delete any existing checkpoint and start from scratch
 - Flags combine: `/plan --auto --deep FEAT-007`
 
 ## Initial Response
 
 When this command is invoked:
+
+0. **Checkpoint check (load the `checkpoints` skill):**
+   - If `--fresh` was passed, delete `docs/checkpoints/plan-*.md` matching this item and proceed fresh
+   - Check `docs/checkpoints/plan-<ID>.md` — if it exists, read it, show the resume summary, and skip to the first incomplete phase
+   - If no checkpoint, proceed normally
+   - After each phase completes (Arch Gate, Codebase Analysis, Write Plan, Review/Validate, Backlog Update), write/update the checkpoint file
+   - **On successful completion:** delete the checkpoint file (bundle deletion into the final commit)
 
 1. **Parse $ARGUMENTS for a spec path, feature ID, or story reference:**
    - If a file path was provided, read it immediately and fully

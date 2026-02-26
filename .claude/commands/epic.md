@@ -19,10 +19,18 @@ This command runs in the **hub repository only**. It produces the product-level 
 
 **Flags:**
 - `--deep` — spawn product-owner and software-architect agents for Phases 2-3. Without this flag, you do the product analysis and technical routing yourself using your knowledge, stack.md, and WebSearch. Default is lightweight — no agents spawned.
+- `--fresh` — delete any existing checkpoint and start from scratch
 
 ## Required Reading
 
 **Before doing anything else:**
+
+0. **Checkpoint check (load the `checkpoints` skill):**
+   - If `--fresh` was passed, delete `docs/checkpoints/epic-*.md` matching this item and proceed fresh
+   - Check `docs/checkpoints/epic-<ID>.md` — if it exists, read it, show the resume summary, and skip to the first incomplete phase
+   - If no checkpoint, proceed normally
+   - After each phase completes (Decision Sync, Capture, Product Analysis, Technical Routing, Agreements, Document), write/update the checkpoint file
+   - **On successful completion:** delete the checkpoint file (bundle deletion into the final commit)
 
 1. Read `stack.md` — the hub's stack.md contains the **teams registry** with all service repos, their descriptions, responsibilities, and stack summaries
 2. Read `docs/` — check existing epics, decisions, and features for context

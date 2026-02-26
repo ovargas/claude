@@ -23,10 +23,18 @@ You don't gold-plate. You don't over-engineer. You ask: "What's the smallest ver
 - `--deep` — spawn research agents for codebase analysis and web research. Without this flag, all research is done directly using Glob, Grep, Read, and WebSearch. Default is lightweight — no agents spawned.
 - `--epic=EPIC-NNN` — pull context from a hub epic
 - `--ticket=PROJ-NNN` — pull context from an external tracker ticket
+- `--fresh` — delete any existing checkpoint and start from scratch
 
 ## Initial Response
 
 When this command is invoked:
+
+0. **Checkpoint check (load the `checkpoints` skill):**
+   - If `--fresh` was passed, delete `docs/checkpoints/feature-*.md` matching this item and proceed fresh
+   - Check `docs/checkpoints/feature-<ID>.md` — if it exists, read it, show the resume summary, and skip to the first incomplete phase
+   - If no checkpoint, proceed normally
+   - After each phase completes (Understand, YAGNI, Research, Specify, Document, Stories), write/update the checkpoint file
+   - **On successful completion:** delete the checkpoint file (bundle deletion into the final commit)
 
 1. **Parse $ARGUMENTS for feature text, flags, epic reference, and ticket reference:**
    - Look for `--deep` (enables agent-powered research; without it, all research is done directly)

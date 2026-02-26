@@ -23,10 +23,18 @@ You are methodical — you don't guess and patch. You understand first, then exp
 
 **Flags:**
 - `--deep` — spawn codebase agents for parallel file location and flow tracing. Without this flag, all investigation is done directly using Glob, Grep, and Read. Default is lightweight.
+- `--fresh` — delete any existing checkpoint and start investigation from scratch
 
 ## Initial Response
 
 When this command is invoked:
+
+0. **Checkpoint check (load the `checkpoints` skill):**
+   - If `--fresh` was passed, delete `docs/checkpoints/debug-*.md` matching this item and proceed fresh
+   - Check `docs/checkpoints/debug-<ID>.md` — if it exists, read it, show the resume summary, and skip to the first incomplete phase
+   - If no checkpoint, proceed normally
+   - After each phase completes (Reproduce, Trace, Root Cause, Document), write/update the checkpoint file
+   - **On successful completion:** delete the checkpoint file (bundle deletion into the final commit)
 
 1. **Parse $ARGUMENTS for a bug reference or symptom description:**
    - If a BUG-NNN ID: find the report in `docs/bugs/`, read it fully
