@@ -27,12 +27,14 @@ This command uses the `sonnet` model because it's a read-and-organize operation.
 - `/next FEAT-003` — pick the next unfinished story from a specific feature
 - `/next --auto` — pick highest-priority item without asking, skip all prompts
 - `/next --here` — work on the current branch, skip worktree creation
+- `/next --current` — skip branch AND worktree creation, work on whatever branch you're on now
 
 **Flags:**
 - `--auto` — autonomous mode: automatically pick the highest-priority ready item, skip the "continue in-progress or pick new" choice (always picks new if nothing is in Doing for this worktree, continues in-progress if something is), and skip all confirmations. Use this for Ralph Wiggum loops or batch processing.
 - `--here` — skip worktree creation and work directly on the current branch. Creates the feature branch in the current repo instead of a separate worktree. Useful for simple features, solo work, or repos where worktrees aren't practical. The lock still applies — parallel work just happens on branches instead of worktrees.
+- `--current` — skip both worktree AND branch creation. Work on the current branch as-is — no checkout, no new branch. The backlog item is still locked and tracked, but no git branching ceremony happens. Useful for solo work where you want to just pick stories and implement them sequentially on the same branch. You can keep running `/next --current` to pick up stories one by one until the feature is done.
 
-Flags combine: `/next --auto --here` picks the highest-priority item, creates a branch in place, and skips all prompts.
+Flags combine: `/next --auto --current` picks the highest-priority item on the current branch and skips all prompts.
 
 ## Process
 
@@ -133,7 +135,13 @@ Before picking up the item, check:
 
 ### Step 4: Determine the Branch Name
 
-Build the branch name from git-practices conventions:
+**If `--current` was passed:** Skip branch name generation entirely. Use the current branch as-is:
+```bash
+git branch --show-current
+```
+Record the current branch name for the lock entry and proceed to Step 5.
+
+**Otherwise**, build the branch name from git-practices conventions:
 
 1. **Type** — derive from the story:
    - New capability → `feat`
@@ -157,7 +165,7 @@ locks:
   - item: "S-003"
     feature: "FEAT-007"
     branch: "feat/CTR-12"
-    worktree: "../repo-worktrees/feat/CTR-12"  # or "in-place" if --here
+    worktree: "../repo-worktrees/feat/CTR-12"  # or "in-place" if --here, or "current-branch" if --current
     started: "2026-02-12T14:30:00"
 ```
 
@@ -177,9 +185,13 @@ If the lockfile already exists with other entries, append the new lock — don't
 
 This commit happens on the main branch so all worktrees can see it immediately.
 
-### Step 7: Create the Branch (worktree or in-place)
+### Step 7: Create the Branch (worktree, in-place, or current)
 
-**If `--here` was NOT passed (default)** — create a worktree:
+**If `--current` was passed** — do nothing. No branch creation, no worktree. Work continues on the current branch. Skip to Step 8.
+
+**If `--here` was passed** but NOT `--current` — create a branch in-place (existing behavior below).
+
+**If neither `--here` nor `--current` (default)** — create a worktree:
 
 1. **Check we're in the main repo directory** (not inside a worktree already):
    ```bash
@@ -281,6 +293,34 @@ Gather everything the implementation session will need:
 
 **Next steps:**
 Run `/implement` to start building
+```
+
+**If using `--current` (no branch creation):**
+
+```
+**Next up:** [Story title]
+**From feature:** [Feature name] (FEAT-NNN)
+**Service:** [backend|frontend|etc.]
+**Ticket:** [TICKET-ID]
+
+**Branch:** [current branch name] (unchanged)
+
+**What to build:**
+[Acceptance criteria from the story]
+
+**Plan reference:** [docs/plans/... or "No plan — consider running /plan first"]
+
+**Context loaded:**
+- Feature spec: [path]
+- Implementation plan: [path]
+- Research: [path or "none"]
+- Related decisions: [path or "none"]
+
+**Backlog lock:** ✅ Item locked (current branch mode)
+
+**Next steps:**
+Run `/implement` to start building
+When done, run `/next --current` again to pick up the next story.
 ```
 
 ---
