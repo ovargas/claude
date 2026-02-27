@@ -19,6 +19,7 @@ The hub's job is done when an epic is documented and agreements are written. Eac
 - **`docs/decisions/`** — Cross-team agreements (API contracts, conventions, data formats) and architectural decision records. These are binding — service repos treat them as constraints.
 - **`docs/research/`** — Research outputs from `/idea` and `/epic` deep research phases.
 - **`docs/backlog.md`** — Product backlog: Active, Next, Inbox.
+- **`docs/checkpoints/`** — Progress checkpoints for long-running commands. Auto-created during execution, auto-deleted on completion.
 
 ## Agents
 
@@ -42,6 +43,7 @@ Commands are the workflow. Each one has a specific job and a hard boundary: pre-
 ### Product Discovery
 - `/idea` — Capture and shape a new product concept through structured interview
 - `/research` — Deep-dive research on a specific topic
+- `/proposal` — Business proposal from an idea or feature — scope, timeline, infrastructure, costs
 
 ### Epic & Feature Flow
 - `/epic` — Define a product initiative, identify affected repos, create cross-team agreements
@@ -49,12 +51,12 @@ Commands are the workflow. Each one has a specific job and a hard boundary: pre-
 
 ### Planning & Implementation (for service repos)
 - `/plan` — Create a technical implementation plan from a feature spec
-- `/implement` — Execute the plan phase by phase with verification
+- `/implement` — Execute the plan phase by phase with verification, marks backlog `[=]` on completion
 - `/next` — Pick up the next backlog item, lock it, create a worktree
 
 ### Code Lifecycle
-- `/commit` — Stage and commit following git conventions
-- `/pr` — Create a pull request and release the backlog lock
+- `/commit` — Stage and commit following git conventions (auto by default)
+- `/pr` — Auto-commits, creates PR, releases backlog lock (auto by default)
 - `/worktree` — Manage git worktrees (create, remove, list, clean)
 
 ### Quality & Maintenance
@@ -63,7 +65,8 @@ Commands are the workflow. Each one has a specific job and a hard boundary: pre-
 - `/refine` — Iterate on an existing document
 - `/bug` — Document a bug report
 - `/debug` — Investigate and diagnose an issue
-- `/status` — Show project status
+- `/docs` — Generate project documentation
+- `/status` — Show project status (detects `[=]` items pending PR)
 - `/handoff` — Create a session handoff note for continuity
 
 ## Skills
