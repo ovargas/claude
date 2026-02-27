@@ -8,6 +8,15 @@ loaded_by: /debug, /epic, /feature, /implement, /plan
 
 Checkpoints let multi-phase commands survive session interruptions. When a phase completes, the command writes a checkpoint file. When the command is re-invoked, it reads the checkpoint and resumes from the first incomplete phase.
 
+## Context Pre-flight
+
+Before starting a multi-phase command, check context usage:
+
+- **At 60% context:** Warn the user. Suggest finishing the current phase, committing the checkpoint, and starting a fresh session to continue.
+- **At 80% context:** Warn the user. Suggest running `/handoff` to generate a handoff document before context runs out, so the next session can resume cleanly.
+
+Checkpoints exist precisely for this scenario — running out of context mid-work is expected, not exceptional.
+
 ## File Location and Naming
 
 Checkpoint files live in `docs/checkpoints/`:
@@ -55,6 +64,16 @@ status: in_progress
 | 4 | Agreements | pending | — |
 | 5 | Document | pending | — |
 
+## Current Phase Detail
+
+<!-- Granular sub-tasks within the active phase only.
+     Cleared when the phase completes. -->
+
+- [x] Gathered user interview notes from docs/research/
+- [x] Identified three competitor approaches
+- [ ] Draft market positioning summary
+- [ ] Validate assumptions with user persona matrix
+
 ## Current State
 
 <!-- Brief description of where things stand — what was the last thing completed,
@@ -80,58 +99,17 @@ status: in_progress
 
 ## Phase Definitions by Command
 
-Each command has a fixed set of phases. The checkpoint tracks progress through these phases.
+Each command defines its own phases in its command file. The checkpoint tracks progress through those phases — it does not redefine them.
 
-### `/debug`
-
-| # | Phase | Checkpoint written when |
+| Command | Phases | Source of truth |
 |---|---|---|
-| 1 | Reproduce | Bug is confirmed reproducible (or confirmed not reproducible with notes) |
-| 2 | Trace | Code path is traced, relevant files and flows identified |
-| 3 | Root Cause | Root cause is identified and documented |
-| 4 | Document | Bug report is written to `docs/bugs/` |
+| `/debug` | 4 phases (Reproduce → Document) | `debug/SKILL.md` |
+| `/epic` | 6 phases (Decision Sync → Document) | `epic/SKILL.md` |
+| `/feature` | 6 phases (Understand → Stories) | `feature/SKILL.md` |
+| `/plan` | 5 phases (Arch Gate → Update Backlog) | `plan/SKILL.md` |
+| `/implement` | Dynamic (from plan document) | The plan file being implemented |
 
-### `/epic`
-
-| # | Phase | Checkpoint written when |
-|---|---|---|
-| 0 | Decision Sync | Existing hub decisions are read and conflicts identified |
-| 1 | Capture | Initiative is described — problem, goal, scope |
-| 2 | Product Analysis | Market/user/value analysis is complete |
-| 3 | Technical Routing | Affected repos identified, work is routed |
-| 4 | Agreements | Cross-team decision documents are written |
-| 5 | Document | Epic document is written to `docs/epics/` |
-
-### `/feature`
-
-| # | Phase | Checkpoint written when |
-|---|---|---|
-| 1 | Understand | Feature is parsed, context gathered, constraints identified |
-| 2 | YAGNI | Scope is challenged and confirmed or reduced |
-| 3 | Research | Technical research is complete (or skipped if unnecessary) |
-| 4 | Specify | Acceptance criteria and definition of done are written |
-| 5 | Document | Feature spec is written to `docs/features/` |
-| 6 | Stories | Stories are broken down and added to backlog |
-
-### `/plan`
-
-| # | Phase | Checkpoint written when |
-|---|---|---|
-| 0 | Arch Gate | stack.md is validated, TBD items checked against feature needs |
-| 1 | Codebase Analysis | Relevant files, patterns, and dependencies are mapped |
-| 2 | Write Plan | Plan document is written to `docs/plans/` |
-| 3 | Review/Validate | Plan is reviewed for completeness and correctness |
-| 4 | Update Backlog | Backlog is updated with plan reference |
-
-### `/implement`
-
-Phases are **dynamic** — they come from the plan document, not from the command. The checkpoint tracks whichever phases the plan defines.
-
-| # | Phase | Checkpoint written when |
-|---|---|---|
-| 1..N | (from plan) | Phase verification passes (automated checks + manual confirmation if required) |
-
-The phase names and count are read from the plan file at the start of implementation.
+When writing a checkpoint, copy the phase names from the command's definition. Do not invent or rename phases here.
 
 ## Protocol
 
@@ -167,16 +145,27 @@ Every checkpointed command runs this before anything else:
    - Update `Current State` with a brief summary
    - Add any decisions to `Key Decisions`
    - Add any created files to `Artifacts Produced`
+   - Clear `Current Phase Detail` sub-tasks (the next phase starts with a fresh list)
 
 2. Write the file using the Write tool — always overwrite the full file (not Edit), since multiple sections change each time.
+
+3. Commit the checkpoint:
+   ```bash
+   git add docs/checkpoints/<command>-<ID>.md
+   git commit -m "checkpoint: <command> <ID> — phase <N> complete"
+   ```
 
 ### On Successful Completion
 
 When all phases are done:
 
-1. Delete the checkpoint file
-2. If the command produces a final commit (like `/implement`), bundle the checkpoint deletion into that commit
-3. If no commit is produced, delete the file and note it:
+1. Remove the checkpoint file and commit the deletion:
+   ```bash
+   git rm docs/checkpoints/<command>-<ID>.md
+   git commit -m "checkpoint: <command> <ID> — complete, removing checkpoint"
+   ```
+2. If the command produces a final commit (like `/implement`), bundle the checkpoint removal into that commit instead of a separate one.
+3. If no final commit is produced, the `git rm` + commit above is sufficient. Note it:
    ```
    Checkpoint cleared: docs/checkpoints/<command>-<ID>.md
    ```
@@ -187,18 +176,23 @@ If a phase fails (verification doesn't pass, blocker found):
 
 1. Update the checkpoint with the failure state in `Current State`
 2. Leave the phase as `in_progress` (not `done`)
-3. The next session will resume at the failed phase with context about what went wrong
+3. Commit the failure state:
+   ```bash
+   git add docs/checkpoints/<command>-<ID>.md
+   git commit -m "checkpoint: <command> <ID> — phase <N> failed"
+   ```
+4. The next session will resume at the failed phase with context about what went wrong
 
 If the session is interrupted (context limit, user closes terminal):
 
-- The last written checkpoint is the recovery point
-- This is why checkpoints are written **after** each phase, not at the end — partial progress is preserved
+- The last committed checkpoint is the recovery point
+- This is why checkpoints are committed **after** each phase, not at the end — partial progress is preserved
 
 ## Directory Management
 
 - Create `docs/checkpoints/` if it doesn't exist (with `.gitkeep`)
-- Checkpoint files should be committed alongside the work they track — they're part of the project state
-- Consider adding `docs/checkpoints/` to `.gitignore` if the team prefers not to track them in version control (this is a project-level decision, not a skill-level one)
+- Checkpoints are committed. They live in git so they survive across sessions, worktrees, and machines.
+- Never add `docs/checkpoints/` to `.gitignore` — checkpoint reliability depends on git persistence.
 
 ## Guidelines
 
@@ -206,4 +200,6 @@ If the session is interrupted (context limit, user closes terminal):
 2. **Keep `Current State` concise.** Two to three sentences max. The resuming session will re-read artifacts for detail.
 3. **Capture decisions, not discussion.** `Key Decisions` records what was decided, not the deliberation.
 4. **Always delete on success.** Stale checkpoints cause confusion. Clean up.
-5. **Don't checkpoint trivial commands.** Only the five multi-phase commands use checkpoints. Single-step commands like `/commit` or `/review` don't need them.
+5. **Checkpoints are committed.** Every checkpoint write is followed by a `git commit`. This is the reliability guarantee — without it, checkpoints don't survive session boundaries.
+6. **Don't checkpoint trivial commands.** Only the five multi-phase commands use checkpoints. Single-step commands like `/commit` or `/review` don't need them.
+7. **Sub-tasks are ephemeral.** `Current Phase Detail` tracks granular items within the active phase only. When the phase completes, sub-tasks are cleared — they've served their purpose.
