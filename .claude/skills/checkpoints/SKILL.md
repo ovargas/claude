@@ -103,10 +103,10 @@ Each command defines its own phases in its command file. The checkpoint tracks p
 
 | Command | Phases | Source of truth |
 |---|---|---|
-| `/debug` | 4 phases (Reproduce → Document) | `debug/SKILL.md` |
-| `/epic` | 6 phases (Decision Sync → Document) | `epic/SKILL.md` |
-| `/feature` | 6 phases (Understand → Stories) | `feature/SKILL.md` |
-| `/plan` | 5 phases (Arch Gate → Update Backlog) | `plan/SKILL.md` |
+| `/debug` | 4 phases (Reproduce → Document) | `.claude/commands/debug.md` |
+| `/epic` | 6 phases (Decision Sync → Document) | `.claude/commands/epic.md` |
+| `/feature` | 6 phases (Understand → Stories) | `.claude/commands/feature.md` |
+| `/plan` | 5 phases (Arch Gate → Update Backlog) | `.claude/commands/plan.md` |
 | `/implement` | Dynamic (from plan document) | The plan file being implemented |
 
 When writing a checkpoint, copy the phase names from the command's definition. Do not invent or rename phases here.
