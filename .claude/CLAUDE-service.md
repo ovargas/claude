@@ -81,6 +81,10 @@ Commands are the workflow. Pre-implementation commands produce documents, never 
 - `/status` — Show project status
 - `/handoff` — Create a session handoff note for continuity
 
+### Setup & Sync
+- `/init` — Initialize a new project with stack definition and structure
+- `/sync` — Update generic workflow files (commands, agents, skills) from the template repo
+
 ## Skills
 
 Skills are domain-specific coding standards. `/implement` loads the relevant skill before writing code for each phase.

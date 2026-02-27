@@ -66,6 +66,10 @@ Commands are the workflow. Each one has a specific job and a hard boundary: pre-
 - `/status` — Show project status
 - `/handoff` — Create a session handoff note for continuity
 
+### Setup & Sync
+- `/init` — Initialize a new project with stack definition and structure
+- `/sync` — Update generic workflow files (commands, agents, skills) from the template repo
+
 ## Skills
 
 Skills are domain-specific standards loaded by implementation commands. In the hub, they're mostly relevant for git operations:
