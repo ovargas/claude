@@ -101,11 +101,30 @@ Skills are domain-specific coding standards. `/implement` loads the relevant ski
 
 ### Project Skills
 
-<!-- Add stack-specific skills here. These layer on top of the generic skills above — -->
-<!-- the generic skill provides principles, the project skill provides concrete patterns. -->
-<!-- Create each as a directory in `.claude/skills/<skill-name>/SKILL.md`. -->
+Stack-specific skills layer on top of generic skills. Discovery works through `stack.md` — commands read the stack definition to identify the frameworks in use, then look for matching skills in `.claude/skills/`.
 
-<!-- Example:
+Each project skill is a directory with a `SKILL.md` file:
+
+```
+.claude/skills/<skill-name>/SKILL.md
+```
+
+Expected frontmatter format:
+
+```yaml
+---
+name: django-backend
+description: Django views, serializers, models, management commands — concrete patterns for this project's Python backend
+stack: python, django          # matches against stack.md entries
+loaded_when: Working on .py files in the backend
+---
+```
+
+The `stack` field is what connects skills to `stack.md`. When `/implement` reads that the project uses Django, it finds skills with `stack: django` and loads them alongside the generic `api-design` or `service-layer` skill.
+
+<!-- Add stack-specific skills below as the project defines its stack.
+
+Example:
 | Skill | Domain | Loaded When |
 |---|---|---|
 | **django-backend** | Django views, serializers, models, management commands | Working on `.py` files in the backend |
