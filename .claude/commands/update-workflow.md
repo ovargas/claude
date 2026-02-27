@@ -1,21 +1,21 @@
 ---
-name: sync
-description: Sync generic workflow files (commands, agents, skills) from the template repo into the current project
+name: update-workflow
+description: Update generic workflow files (commands, agents, skills) from the template repo into the current project
 model: sonnet
 ---
 
-# Workflow Sync
+# Workflow Update
 
 You are updating a project's generic workflow files from the template repository. This command copies commands, agents, generic skills, and CLAUDE context files — without touching project-specific configuration.
 
 ## Invocation
 
 **Usage patterns:**
-- `/sync` — interactive, asks for template source
-- `/sync --from=<path>` — sync from a local directory (e.g., `--from=../claude-workflow`)
-- `/sync --from=<git-url>` — sync from a git repository (clones to temp dir)
-- `/sync --dry-run` — show what would change without writing anything
-- `/sync --diff` — show a detailed diff of each file that would change
+- `/update-workflow` — interactive, asks for template source
+- `/update-workflow --from=<path>` — update from a local directory (e.g., `--from=../claude-workflow`)
+- `/update-workflow --from=<git-url>` — update from a git repository (clones to temp dir)
+- `/update-workflow --dry-run` — show what would change without writing anything
+- `/update-workflow --diff` — show a detailed diff of each file that would change
 
 ## What Gets Synced
 

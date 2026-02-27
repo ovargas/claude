@@ -83,7 +83,7 @@ Commands are the workflow. Pre-implementation commands produce documents, never 
 
 ### Setup & Sync
 - `/init` — Initialize a new project with stack definition and structure
-- `/sync` — Update generic workflow files (commands, agents, skills) from the template repo
+- `/update-workflow` — Update generic workflow files (commands, agents, skills) from the template repo
 
 ## Skills
 
