@@ -14,6 +14,7 @@ You are updating a project's generic workflow files from the template repository
 - `/update-workflow` — interactive, asks for template source
 - `/update-workflow --from=<path>` — update from a local directory (e.g., `--from=../claude-workflow`)
 - `/update-workflow --from=<git-url>` — update from a git repository (clones to temp dir)
+- `/update-workflow --ref=<branch|tag>` — use a specific branch or tag when cloning (default: `main`)
 - `/update-workflow --dry-run` — show what would change without writing anything
 - `/update-workflow --diff` — show a detailed diff of each file that would change
 
@@ -27,8 +28,17 @@ These are the shared workflow files maintained in the template repo:
 |---|---|---|
 | **Commands** | `.claude/commands/*.md` | All command files |
 | **Agents** | `.claude/agents/*.md` | All agent definitions |
-| **Generic skills** | `.claude/skills/{api-design,data-layer,git-practices,service-layer,ui-design}/` | The 5 domain-principle skills |
-| **CLAUDE context** | `.claude/CLAUDE-service.md`, `.claude/CLAUDE-hub.md` | Repo-type context files |
+| **Generic skills** | `.claude/skills/{api-design,data-layer,git-practices,service-layer,ui-design,checkpoints}/` | The domain-principle skills |
+
+### CLAUDE context files (merge with care)
+
+`CLAUDE-service.md` and `CLAUDE-hub.md` contain both generic workflow structure AND project-customized sections (e.g., project-specific commands, custom behavioral expectations, skills tables with project entries). A full overwrite would wipe those customizations.
+
+**Strategy:** When these files differ from the template, do NOT auto-overwrite. Instead:
+1. Show the diff to the user
+2. Present the update section-by-section (e.g., "Commands section changed", "Skills table changed")
+3. Let the user accept or skip each section
+4. If the user prefers, they can apply the full overwrite manually
 
 ### Project-specific files (never touched)
 
@@ -52,7 +62,8 @@ Determine where the template files come from.
    - Use it directly as the source
 
 2. **If `--from=<git-url>` is a git URL:**
-   - Clone to a temporary directory: `git clone --depth 1 --branch main <url> /tmp/claude-sync-template`
+   - Clone to a temporary directory: `git clone --depth 1 --branch <ref> <url> /tmp/claude-sync-template`
+     - `<ref>` comes from `--ref` flag if provided, otherwise defaults to `main`
    - Use the cloned directory as the source
    - Clean up the temp directory when done
 
@@ -88,13 +99,16 @@ For each file, determine the category:
 ```
 Generic commands:   compare <source>/.claude/commands/*.md → .claude/commands/*.md
 Generic agents:     compare <source>/.claude/agents/*.md → .claude/agents/*.md
-Generic skills:     compare <source>/.claude/skills/{api-design,data-layer,git-practices,service-layer,ui-design}/ → .claude/skills/*/
-CLAUDE context:     compare <source>/.claude/CLAUDE-service.md → .claude/CLAUDE-service.md
-                    compare <source>/.claude/CLAUDE-hub.md → .claude/CLAUDE-hub.md
+Generic skills:     compare <source>/.claude/skills/{api-design,data-layer,git-practices,service-layer,ui-design,checkpoints}/ → .claude/skills/*/
+CLAUDE context:     compare <source>/.claude/CLAUDE-service.md → .claude/CLAUDE-service.md  (section-by-section)
+                    compare <source>/.claude/CLAUDE-hub.md → .claude/CLAUDE-hub.md            (section-by-section)
 ```
 
 Also detect:
-- **Removed from template** — file exists in target commands/agents but NOT in source (template removed it). Flag these for the user to decide.
+- **Target-only** — file exists in target commands/agents but NOT in source. This could mean the template removed it OR the project added a custom command. Do NOT assume deletion — flag it for the user to decide, and present it neutrally:
+  ```
+  ? deploy.md — exists locally but not in template (custom command or removed?)
+  ```
 - **New project skills** — skills in the target that aren't in the generic list. List them as "preserved" for confirmation.
 
 ### Step 2: Present Report
@@ -120,8 +134,8 @@ GENERIC SKILLS (N updated, N added, N unchanged)
   ✎ api-design/SKILL.md  — updated (layered skill loading)
   ...
 
-CLAUDE CONTEXT (N updated, N unchanged)
-  ✎ CLAUDE-service.md    — updated
+CLAUDE CONTEXT (reviewed section-by-section)
+  ⚠ CLAUDE-service.md    — differs (section-by-section review)
   · CLAUDE-hub.md         — unchanged
 
 PROJECT-SPECIFIC (preserved, not touched)
@@ -152,14 +166,22 @@ If "Apply all" or confirmed through "Review each":
 1. Copy each updated/added file from source to target using the Write tool
 2. Track what was written
 
-If a file was "Removed from template", ask separately:
+If a file is "Target-only", ask:
 ```
-[filename] exists in your project but was removed from the template. Delete it?
+[filename] exists locally but not in template. Is this a custom project file (keep) or was it removed from the template (delete)?
 ```
 
 ### Step 4: Clean Up and Report
 
 If a git URL was cloned, remove the temp directory.
+
+Write the template version to `.claude/.workflow-version`:
+```
+source: <git-url or local path>
+ref: <branch/tag used>
+synced: <ISO 8601 timestamp>
+commit: <source repo HEAD commit hash, if available>
+```
 
 Present the final report:
 
@@ -172,6 +194,7 @@ Applied:
   · N files unchanged (skipped)
   ✔ N project-specific files preserved
 
+Workflow version recorded in .claude/.workflow-version
 No project-specific files were modified.
 ```
 
@@ -182,18 +205,22 @@ Review the changes with `git diff`, then `/commit` when ready.
 
 ## Important Guidelines
 
-1. **NEVER touch project-specific skills.** The generic skill list is hardcoded: `api-design`, `data-layer`, `git-practices`, `service-layer`, `ui-design`. Everything else in `.claude/skills/` belongs to the project.
+1. **NEVER touch project-specific skills.** The generic skill list is hardcoded: `api-design`, `data-layer`, `git-practices`, `service-layer`, `ui-design`, `checkpoints`. Everything else in `.claude/skills/` belongs to the project.
 
 2. **NEVER touch `settings.local.json`.** This is project-specific configuration.
 
 3. **NEVER touch `stack.md`, `docs/`, or `CLAUDE.md`.** These are project content, not workflow.
 
-4. **Show before writing.** Always present the change report before modifying any files. The user must confirm.
+4. **CLAUDE context files need section-level review.** `CLAUDE-service.md` and `CLAUDE-hub.md` mix generic workflow with project customizations. Never auto-overwrite — always show the diff and let the user accept or skip each section.
 
-5. **Preserve file structure.** Copy files maintaining the exact directory structure. Don't flatten or reorganize.
+5. **Show before writing.** Always present the change report before modifying any files. The user must confirm.
 
-6. **Handle missing directories.** If the target doesn't have `.claude/agents/` yet, create it. Same for other directories.
+6. **Preserve file structure.** Copy files maintaining the exact directory structure. Don't flatten or reorganize.
 
-7. **One-way sync.** This command only copies FROM the template TO the project. It never modifies the template.
+7. **Handle missing directories.** If the target doesn't have `.claude/agents/` yet, create it. Same for other directories.
 
-8. **This command can be used to add new files that were introduced to the template.** This is why the command also tracks commands/agents that exist in source but not in target ("Added" category).
+8. **One-way sync.** This command only copies FROM the template TO the project. It never modifies the template.
+
+9. **Track workflow version.** After every successful sync, write `.claude/.workflow-version` with the source, ref, timestamp, and commit hash. This lets future syncs show what changed since last update.
+
+10. **This command can be used to add new files that were introduced to the template.** This is why the command also tracks commands/agents that exist in source but not in target ("Added" category).
