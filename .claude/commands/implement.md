@@ -231,7 +231,7 @@ Before writing code, load the relevant skills in two layers:
 - Working on **database/migrations/queries?** → Read the `data-layer` skill
 - Working on **business logic/services?** → Read the `service-layer` skill
 
-**Layer 2 — Stack-specific patterns.** Check `.claude/skills/` for additional skills that match the specific technology. Read `stack.md` to identify the frameworks in use, then find skills whose `stack` frontmatter field matches (e.g., `stack: django` matches a Django project). These cover concrete conventions — which annotations, which libraries, which patterns to follow. Load them on top of the generic skill.
+**Layer 2 — Stack-specific patterns.** Check `.claude/skills/` for additional skills that match the specific technology. Read `stack.md` to identify the frameworks in use. Then scan `.claude/skills/*/SKILL.md` for project skills — read each skill's `stack` frontmatter field (a comma-separated list of technologies, e.g., `stack: python, django`). A skill matches if **any** of its `stack` entries appears as a technology in `stack.md` (case-insensitive). For example, if `stack.md` lists Django as the framework, a skill with `stack: python, django` matches because "django" appears in both. These cover concrete conventions — which annotations, which libraries, which patterns to follow. Load them on top of the generic skill.
 
 If the project has no stack-specific skills, the generic skills are sufficient. If a stack-specific skill exists, load **both** — the generic skill for principles, the stack-specific skill for concrete patterns.
 

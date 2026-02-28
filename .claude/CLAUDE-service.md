@@ -115,8 +115,8 @@ Expected frontmatter format:
 ---
 name: django-backend
 description: Django views, serializers, models, management commands — concrete patterns for this project's Python backend
-stack: python, django          # matches against stack.md entries
-loaded_when: Working on .py files in the backend
+stack: python, django          # matched against stack.md to auto-load
+loaded_when: Working on .py files in the backend   # informational — helps maintainers understand scope
 ---
 ```
 
