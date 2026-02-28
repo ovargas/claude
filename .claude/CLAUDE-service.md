@@ -86,16 +86,50 @@ Commands are the workflow. Pre-implementation commands produce documents, never 
 
 ## Skills
 
-Skills are domain-specific coding standards. `/implement` loads the relevant skill before writing code for each phase.
+Skills are domain-specific coding standards. `/implement` loads the relevant skill before writing code for each phase. Skills work in two layers: generic domain principles, then stack-specific patterns on top.
+
+### Generic Skills (included with template)
 
 | Skill | Domain | Loaded When |
 |---|---|---|
 | **git-practices** | Branch naming, commits, PRs, worktrees, backlog lock | `/commit`, `/pr`, `/next`, `/worktree` |
-| **api-design** | API endpoints, route handlers, middleware, validation | Working on routes, controllers, API code |
-| **ui-design** | Frontend components, pages, hooks, styling, state | Working on `.tsx`, `.jsx`, `.css`, frontend dirs |
-| **data-layer** | Database schemas, migrations, models, repositories, queries | Working on models, migrations, DB code |
-| **service-layer** | Business logic, services, domain rules, orchestration | Working on services, use cases, domain logic |
+| **api-design** | API principles: validation, status codes, response format, middleware | Working on routes, controllers, API code |
+| **ui-design** | UI principles: accessibility, state management, error UX, performance | Working on `.tsx`, `.jsx`, `.css`, frontend dirs |
+| **data-layer** | Data principles: schema design, migration safety, query performance | Working on models, migrations, DB code |
+| **service-layer** | Service principles: boundaries, transactions, side effects, business rules | Working on services, use cases, domain logic |
 | **checkpoints** | Progress checkpointing for long-running commands | `/implement`, `/debug`, `/feature`, `/plan`, `/epic` |
+
+### Project Skills
+
+Stack-specific skills layer on top of generic skills. Discovery works through `stack.md` — commands read the stack definition to identify the frameworks in use, then look for matching skills in `.claude/skills/`.
+
+Each project skill is a directory with a `SKILL.md` file:
+
+```
+.claude/skills/<skill-name>/SKILL.md
+```
+
+Expected frontmatter format:
+
+```yaml
+---
+name: django-backend
+description: Django views, serializers, models, management commands — concrete patterns for this project's Python backend
+stack: python, django          # matched against stack.md to auto-load
+loaded_when: Working on .py files in the backend   # informational — helps maintainers understand scope
+---
+```
+
+The `stack` field is what connects skills to `stack.md`. When `/implement` reads that the project uses Django, it finds skills with `stack: django` and loads them alongside the generic `api-design` or `service-layer` skill.
+
+<!-- Add stack-specific skills below as the project defines its stack.
+
+Example:
+| Skill | Domain | Loaded When |
+|---|---|---|
+| **django-backend** | Django views, serializers, models, management commands | Working on `.py` files in the backend |
+| **react-nextjs** | Next.js pages, React components, hooks, Tailwind | Working on `.tsx` files in the frontend |
+-->
 
 Skills contain conventions — not code templates. The implementation plan points to existing codebase patterns. Skills ensure the new code follows the same standards.
 

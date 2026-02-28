@@ -222,14 +222,20 @@ Beginning Phase 1: [Phase name]
 
 ## Skill Loading
 
-Before writing code, check which domain skills are available and load the relevant one:
+Before writing code, load the relevant skills in two layers:
 
-- Working on **frontend components/pages/styling?** → Read the `ui-design` skill
+**Layer 1 — Domain principles.** Load the generic skill that matches the work domain. These cover universal rules (validation, accessibility, migration safety, transaction boundaries) that apply regardless of stack:
+
 - Working on **API endpoints/routes/handlers?** → Read the `api-design` skill
+- Working on **frontend components/pages/styling?** → Read the `ui-design` skill
 - Working on **database/migrations/queries?** → Read the `data-layer` skill
 - Working on **business logic/services?** → Read the `service-layer` skill
 
-These skills contain the coding standards and patterns for each domain. Follow them. If a skill conflicts with the implementation plan, the plan takes precedence (it was written with the project's specifics in mind), but flag the conflict.
+**Layer 2 — Stack-specific patterns.** Check `.claude/skills/` for additional skills that match the specific technology. Read `stack.md` to identify the frameworks in use. Then scan `.claude/skills/*/SKILL.md` for project skills — read each skill's `stack` frontmatter field (a comma-separated list of technologies, e.g., `stack: python, django`). A skill matches if **any** of its `stack` entries appears as a technology in `stack.md` (case-insensitive). For example, if `stack.md` lists Django as the framework, a skill with `stack: python, django` matches because "django" appears in both. These cover concrete conventions — which annotations, which libraries, which patterns to follow. Load them on top of the generic skill.
+
+If the project has no stack-specific skills, the generic skills are sufficient. If a stack-specific skill exists, load **both** — the generic skill for principles, the stack-specific skill for concrete patterns.
+
+If a stack-specific skill conflicts with a generic skill, follow the stack-specific one (it reflects the project's actual conventions). If either conflicts with the implementation plan, the plan takes precedence — but flag the conflict.
 
 Only load the skill(s) relevant to the current phase — don't load all of them at once.
 
