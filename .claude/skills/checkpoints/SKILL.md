@@ -1,7 +1,7 @@
 ---
 name: checkpoints
 description: Checkpoint protocol for resuming multi-phase commands after session interruptions
-loaded_by: /debug, /epic, /feature, /implement, /plan
+loaded_when: /debug, /epic, /feature, /implement, /plan
 ---
 
 # Checkpoints Skill
@@ -12,10 +12,10 @@ Checkpoints let multi-phase commands survive session interruptions. When a phase
 
 Before starting a multi-phase command, check context usage:
 
-- **At 60% context:** Warn the user. Suggest finishing the current phase, committing the checkpoint, and starting a fresh session to continue.
+- **At 60% context:** Warn the user. Suggest running `/compact` to free space, or finishing the current phase, committing the checkpoint, and starting a fresh session.
 - **At 80% context:** Warn the user. Suggest running `/handoff` to generate a handoff document before context runs out, so the next session can resume cleanly.
 
-Checkpoints exist precisely for this scenario — running out of context mid-work is expected, not exceptional.
+Checkpoints exist precisely for this scenario — running out of context mid-work is expected, not exceptional. The command proceeds either way, but the user knows checkpoints will protect their progress.
 
 ## File Location and Naming
 
@@ -46,9 +46,12 @@ If the item has no formal ID (e.g., a debug session started from a symptom descr
 ---
 command: <command>
 item: <ID or description>
+branch: <git branch name>
 started: <ISO 8601 timestamp>
 updated: <ISO 8601 timestamp>
 status: in_progress
+current_phase: 2
+total_phases: 5
 ---
 
 # Checkpoint: <command> — <item>
@@ -95,6 +98,16 @@ status: in_progress
 
 - `docs/epics/EPIC-001-notifications.md` (draft, through Phase 1)
 - `docs/decisions/2026-02-27-notification-transport.md`
+
+## Key Context
+
+<!-- References to documents and context the resuming session should re-read.
+     Populated on creation, stays fixed throughout. -->
+
+- Feature: `docs/features/FEAT-003-notifications.md`
+- Plan: `docs/plans/2026-02-12-notifications.md`
+- Branch: `feat/CTR-12`
+- Stack: Node.js + React (from stack.md)
 ```
 
 ## Phase Definitions by Command
@@ -159,16 +172,9 @@ Every checkpointed command runs this before anything else:
 
 When all phases are done:
 
-1. Remove the checkpoint file and commit the deletion:
-   ```bash
-   git rm docs/checkpoints/<command>-<ID>.md
-   git commit -m "checkpoint: <command> <ID> — complete, removing checkpoint"
-   ```
-2. If the command produces a final commit (like `/implement`), bundle the checkpoint removal into that commit instead of a separate one.
-3. If no final commit is produced, the `git rm` + commit above is sufficient. Note it:
-   ```
-   Checkpoint cleared: docs/checkpoints/<command>-<ID>.md
-   ```
+1. Delete the checkpoint file: `rm docs/checkpoints/<command>-<ID>.md`
+2. Bundle the deletion into the final commit (e.g., the backlog update commit in `/implement`)
+3. If the command doesn't produce a final commit, use: `git rm` + `git commit -m "checkpoint: <command> <ID> — complete, removing checkpoint"`
 
 ### On Failure or Interruption
 
@@ -203,3 +209,5 @@ If the session is interrupted (context limit, user closes terminal):
 5. **Checkpoints are committed.** Every checkpoint write is followed by a `git commit`. This is the reliability guarantee — without it, checkpoints don't survive session boundaries.
 6. **Don't checkpoint trivial commands.** Only the five multi-phase commands use checkpoints. Single-step commands like `/commit` or `/review` don't need them.
 7. **Sub-tasks are ephemeral.** `Current Phase Detail` tracks granular items within the active phase only. When the phase completes, sub-tasks are cleared — they've served their purpose.
+8. **Completed phases are trusted.** When resuming, do NOT re-verify or re-implement completed phases. Trust the checkpoint. If something is wrong, the user can `--fresh` to start over.
+9. **One checkpoint per command+ID pair.** If `/implement FEAT-007` is run, there's one checkpoint file. Running it again resumes. Running `/implement FEAT-008` creates a separate checkpoint.
