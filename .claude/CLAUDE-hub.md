@@ -60,6 +60,7 @@ Commands are the workflow. Each one has a specific job and a hard boundary: pre-
 - `/worktree` — Manage git worktrees (create, remove, list, clean)
 
 ### Quality & Maintenance
+- `/validate` — Compare feature spec against implementation — gap report
 - `/review` — Code review
 - `/tech-review` — Technical review of architecture or approach
 - `/refine` — Iterate on an existing document
