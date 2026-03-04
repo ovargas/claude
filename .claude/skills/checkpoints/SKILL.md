@@ -1,157 +1,213 @@
 ---
 name: checkpoints
-description: Progress checkpointing for long-running commands. Load this skill in commands that run multiple phases and risk context window exhaustion — implement, debug, feature, plan, epic. Enables resume-after-clear and cleanup-on-completion.
-model: sonnet
+description: Checkpoint protocol for resuming multi-phase commands after session interruptions
+loaded_when: /debug, /epic, /feature, /implement, /plan
 ---
 
-# Checkpoints
+# Checkpoints Skill
 
-Long-running commands write progress to disk so they can resume after a context clear and clean up when done. This skill defines the checkpoint protocol.
+Checkpoints let multi-phase commands survive session interruptions. When a phase completes, the command writes a checkpoint file. When the command is re-invoked, it reads the checkpoint and resumes from the first incomplete phase.
 
-## Checkpoint File
+## Context Pre-flight
 
-**Location:** `docs/checkpoints/<COMMAND>-<ID>.md`
+Before starting a multi-phase command, check context usage:
+
+- **At 60% context:** Warn the user. Suggest running `/compact` to free space, or finishing the current phase, committing the checkpoint, and starting a fresh session.
+- **At 80% context:** Warn the user. Suggest running `/handoff` to generate a handoff document before context runs out, so the next session can resume cleanly.
+
+Checkpoints exist precisely for this scenario — running out of context mid-work is expected, not exceptional. The command proceeds either way, but the user knows checkpoints will protect their progress.
+
+## File Location and Naming
+
+Checkpoint files live in `docs/checkpoints/`:
+
+```
+docs/checkpoints/<command>-<ID>.md
+```
+
+Where:
+- `<command>` is the command name: `debug`, `epic`, `feature`, `implement`, `plan`
+- `<ID>` is the item identifier the command is working on (e.g., `FEAT-003`, `EPIC-001`, `BUG-012`, the plan filename slug)
 
 Examples:
-- `docs/checkpoints/implement-FEAT-007.md`
-- `docs/checkpoints/debug-BUG-003.md`
-- `docs/checkpoints/feature-FEAT-012.md`
-- `docs/checkpoints/plan-S-005.md`
-- `docs/checkpoints/epic-EPIC-002.md`
+```
+docs/checkpoints/feature-FEAT-003.md
+docs/checkpoints/implement-2026-02-12-notifications.md
+docs/checkpoints/debug-BUG-012.md
+docs/checkpoints/epic-EPIC-001.md
+docs/checkpoints/plan-FEAT-007.md
+```
 
-**Format:**
+If the item has no formal ID (e.g., a debug session started from a symptom description), derive a short slug from the context (e.g., `debug-login-timeout`).
+
+## Checkpoint File Format
+
 ```markdown
 ---
-command: implement
-id: FEAT-007
-branch: feat/CTR-12
-started: 2026-02-15T10:30:00
-updated: 2026-02-15T11:45:00
-status: in-progress
-current_phase: 3
+command: <command>
+item: <ID or description>
+branch: <git branch name>
+started: <ISO 8601 timestamp>
+updated: <ISO 8601 timestamp>
+status: in_progress
+current_phase: 2
 total_phases: 5
 ---
 
-# Checkpoint: /implement FEAT-007
+# Checkpoint: <command> — <item>
 
-## Completed Phases
+## Phases
 
-### Phase 1: Database schema
-- ✅ Created migration `20260215_add_tasks_table.sql`
-- ✅ Added model `src/models/task.ts`
-- Files touched: `src/models/task.ts`, `migrations/20260215_add_tasks_table.sql`
+| # | Phase | Status | Completed |
+|---|---|---|---|
+| 0 | Decision Sync | done | 2026-02-27T10:15:00Z |
+| 1 | Capture | done | 2026-02-27T10:32:00Z |
+| 2 | Product Analysis | in_progress | — |
+| 3 | Technical Routing | pending | — |
+| 4 | Agreements | pending | — |
+| 5 | Document | pending | — |
 
-### Phase 2: API endpoints
-- ✅ Added `POST /api/tasks` endpoint
-- ✅ Added `GET /api/tasks/:id` endpoint
-- Files touched: `src/routes/tasks.ts`, `src/services/taskService.ts`
+## Current Phase Detail
 
-## Current Phase
+<!-- Granular sub-tasks within the active phase only.
+     Cleared when the phase completes. -->
 
-### Phase 3: Frontend components
-- 🔄 Created `TaskList` component
-- ⬜ Create `TaskDetail` component
-- ⬜ Wire up API calls
+- [x] Gathered user interview notes from docs/research/
+- [x] Identified three competitor approaches
+- [ ] Draft market positioning summary
+- [ ] Validate assumptions with user persona matrix
 
-## Remaining Phases
+## Current State
 
-### Phase 4: Integration tests
-### Phase 5: Documentation
+<!-- Brief description of where things stand — what was the last thing completed,
+     what's next, any decisions made or blockers encountered. Keep this short
+     but specific enough to resume without re-reading everything. -->
+
+## Key Decisions
+
+<!-- Capture decisions made during completed phases that affect later phases.
+     This prevents re-asking the user questions they already answered. -->
+
+- [Phase 0] Synced with hub decisions ADR-005 and ADR-008
+- [Phase 1] Scope confirmed: notifications for orders only, not marketing
+
+## Artifacts Produced
+
+<!-- List files created or modified by completed phases. This tells the
+     resuming session what already exists and doesn't need to be recreated. -->
+
+- `docs/epics/EPIC-001-notifications.md` (draft, through Phase 1)
+- `docs/decisions/2026-02-27-notification-transport.md`
 
 ## Key Context
-- Feature spec: `docs/features/FEAT-007-task-management.md`
-- Plan: `docs/plans/FEAT-007-plan.md`
+
+<!-- References to documents and context the resuming session should re-read.
+     Populated on creation, stays fixed throughout. -->
+
+- Feature: `docs/features/FEAT-003-notifications.md`
+- Plan: `docs/plans/2026-02-12-notifications.md`
 - Branch: `feat/CTR-12`
 - Stack: Node.js + React (from stack.md)
 ```
 
+## Phase Definitions by Command
+
+Each command defines its own phases in its command file. The checkpoint tracks progress through those phases — it does not redefine them.
+
+| Command | Phases | Source of truth |
+|---|---|---|
+| `/debug` | 4 phases (Reproduce → Document) | `.claude/commands/debug.md` |
+| `/epic` | 6 phases (Decision Sync → Document) | `.claude/commands/epic.md` |
+| `/feature` | 6 phases (Understand → Stories) | `.claude/commands/feature.md` |
+| `/plan` | 5 phases (Arch Gate → Update Backlog) | `.claude/commands/plan.md` |
+| `/implement` | Dynamic (from plan document) | The plan file being implemented |
+
+When writing a checkpoint, copy the phase names from the command's definition. Do not invent or rename phases here.
+
 ## Protocol
 
-### On Command Start — Check for Existing Checkpoint
+### On Command Start (Step 0)
 
-Before doing anything else, check if a checkpoint exists:
+Every checkpointed command runs this before anything else:
 
-```
-1. Look for `docs/checkpoints/<COMMAND>-<ID>.md`
-2. If found:
-   - Read it
-   - Show the user:
-     **Resuming from checkpoint:**
-     Command: /implement FEAT-007
-     Last updated: 2026-02-15 11:45
-     Completed: Phase 1 (Database schema), Phase 2 (API endpoints)
-     In progress: Phase 3 (Frontend components) — TaskList created, TaskDetail pending
-     Remaining: Phase 4, Phase 5
+1. **If `--fresh` was passed:**
+   - Delete `docs/checkpoints/<command>-*.md` matching the current item
+   - Proceed as if no checkpoint exists
 
-     Picking up from Phase 3.
-   - Skip completed phases entirely — do NOT re-read or re-do them
-   - Resume from the current phase's first incomplete item
-3. If not found:
-   - Start fresh, create the checkpoint after completing the first phase
-```
+2. **Check for existing checkpoint:**
+   - Look for `docs/checkpoints/<command>-<ID>.md`
+   - If found, read it and show a resume summary:
+     ```
+     Resuming from checkpoint: docs/checkpoints/<command>-<ID>.md
+     Last updated: <timestamp>
+     Completed: Phase 0 (Decision Sync), Phase 1 (Capture)
+     Resuming at: Phase 2 (Product Analysis)
+     ```
+   - Skip to the first phase with status `pending` or `in_progress`
+   - Re-read any artifacts listed in the checkpoint to restore context
 
-### During Execution — Write After Each Phase
+3. **If no checkpoint exists:**
+   - Proceed normally from the beginning
 
-After completing each phase:
+### After Each Phase Completes
 
 1. Update the checkpoint file:
-   - Move the completed phase to "Completed Phases" with a summary of what was done
-   - List files touched in that phase
-   - Update `current_phase` and `updated` in frontmatter
-   - Write the next phase as "Current Phase"
-2. Commit the checkpoint (lightweight, no noise):
+   - Set the completed phase status to `done` with a timestamp
+   - Set the next phase status to `in_progress` (if there is one)
+   - Update the `updated` timestamp in frontmatter
+   - Update `Current State` with a brief summary
+   - Add any decisions to `Key Decisions`
+   - Add any created files to `Artifacts Produced`
+   - Clear `Current Phase Detail` sub-tasks (the next phase starts with a fresh list)
+
+2. Write the file using the Write tool — always overwrite the full file (not Edit), since multiple sections change each time.
+
+3. Commit the checkpoint:
    ```bash
-   git add docs/checkpoints/<COMMAND>-<ID>.md
-   git commit -m "checkpoint: <command> <id> — phase <N> complete"
+   git add docs/checkpoints/<command>-<ID>.md
+   git commit -m "checkpoint: <command> <ID> — phase <N> complete"
    ```
 
-### On Command Completion — Clean Up
+### On Successful Completion
 
-When ALL phases are complete:
+When all phases are done:
 
-1. Delete the checkpoint file:
+1. Delete the checkpoint file: `rm docs/checkpoints/<command>-<ID>.md`
+2. Bundle the deletion into the final commit (e.g., the backlog update commit in `/implement`)
+3. If the command doesn't produce a final commit, use: `git rm` + `git commit -m "checkpoint: <command> <ID> — complete, removing checkpoint"`
+
+### On Failure or Interruption
+
+If a phase fails (verification doesn't pass, blocker found):
+
+1. Update the checkpoint with the failure state in `Current State`
+2. Leave the phase as `in_progress` (not `done`)
+3. Commit the failure state:
    ```bash
-   rm docs/checkpoints/<COMMAND>-<ID>.md
+   git add docs/checkpoints/<command>-<ID>.md
+   git commit -m "checkpoint: <command> <ID> — phase <N> failed"
    ```
-2. Commit the deletion with the final work:
-   ```bash
-   git add -A
-   git commit -m "<type>(<scope>): <message> [<ticket-id>]"
-   ```
-   The checkpoint removal is bundled into the final commit — no extra noise.
+4. The next session will resume at the failed phase with context about what went wrong
 
-### On Error or Interruption
+If the session is interrupted (context limit, user closes terminal):
 
-If the command fails or is interrupted:
-- The checkpoint stays on disk — that's the whole point
-- Next time the user runs the same command with the same ID, it picks up where it left off
-- If the user wants to start over, they delete the checkpoint manually or run with `--fresh`
+- The last committed checkpoint is the recovery point
+- This is why checkpoints are committed **after** each phase, not at the end — partial progress is preserved
 
-## Rules
+## Directory Management
 
-1. **Checkpoint after phases, not after every step.** Don't write to disk after every file read. Write after meaningful milestones — completed phases, major sub-tasks.
+- Create `docs/checkpoints/` if it doesn't exist (with `.gitkeep`)
+- Checkpoints are committed. They live in git so they survive across sessions, worktrees, and machines.
+- Never add `docs/checkpoints/` to `.gitignore` — checkpoint reliability depends on git persistence.
 
-2. **Keep checkpoints lean.** Record what was done and what files were touched. Don't dump full file contents or huge code blocks into the checkpoint.
+## Guidelines
 
-3. **Completed phases are trusted.** When resuming, do NOT re-verify or re-implement completed phases. Trust the checkpoint. If something is wrong, the user can `--fresh` to start over.
-
-4. **One checkpoint per command+ID pair.** If `/implement FEAT-007` is run, there's one checkpoint file. Running it again resumes. Running `/implement FEAT-008` creates a separate checkpoint.
-
-5. **Checkpoints are committed.** They live in git so they survive across sessions, worktrees, and machines.
-
-6. **`--fresh` flag.** All commands that use checkpoints should accept `--fresh` to delete any existing checkpoint and start from scratch.
-
-7. **Cleanup is mandatory.** On successful completion, the checkpoint MUST be deleted. Leftover checkpoints signal incomplete work.
-
-## Context Pre-flight
-
-Before starting a heavy command, estimate context usage. If the conversation already has substantial history:
-
-```
-⚠️ Context usage is high. This command needs room to work.
-Consider running /compact or /clear before proceeding.
-Alternatively, this command supports checkpoints — if context runs out mid-work,
-re-run the same command and it will resume from the last completed phase.
-```
-
-This is a suggestion, not a blocker — the command proceeds either way, but the user knows checkpoints will protect their progress.
+1. **Write checkpoints after phases, not during.** A phase is either done or not — no partial phase checkpoints.
+2. **Keep `Current State` concise.** Two to three sentences max. The resuming session will re-read artifacts for detail.
+3. **Capture decisions, not discussion.** `Key Decisions` records what was decided, not the deliberation.
+4. **Always delete on success.** Stale checkpoints cause confusion. Clean up.
+5. **Checkpoints are committed.** Every checkpoint write is followed by a `git commit`. This is the reliability guarantee — without it, checkpoints don't survive session boundaries.
+6. **Don't checkpoint trivial commands.** Only the five multi-phase commands use checkpoints. Single-step commands like `/commit` or `/review` don't need them.
+7. **Sub-tasks are ephemeral.** `Current Phase Detail` tracks granular items within the active phase only. When the phase completes, sub-tasks are cleared — they've served their purpose.
+8. **Completed phases are trusted.** When resuming, do NOT re-verify or re-implement completed phases. Trust the checkpoint. If something is wrong, the user can `--fresh` to start over.
+9. **One checkpoint per command+ID pair.** If `/implement FEAT-007` is run, there's one checkpoint file. Running it again resumes. Running `/implement FEAT-008` creates a separate checkpoint.
