@@ -75,7 +75,7 @@ Commands are the workflow. Pre-implementation commands produce documents, never 
 - `/worktree` — Manage git worktrees (create, remove, list, clean)
 
 ### Quality & Maintenance
-- `/validate` — Compare feature spec against implementation — gap report with met/partial/missing/deviated status per requirement
+- `/validate` — Compare feature spec against implementation — gap report with frontmatter. Use `--fix` to create backlog stories from gaps.
 - `/review` — Code review
 - `/tech-review` — Technical review of architecture or approach
 - `/refine` — Iterate on an existing document
