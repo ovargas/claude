@@ -16,8 +16,10 @@ This command runs in the **hub repository only**. It produces the product-level 
 - `/epic` — interactive mode, will ask about the initiative
 - `/epic Add multilingual support for all user-facing content` — starts with the provided description
 - `/epic --deep Add multilingual support` — spawn PO and architect agents for full analysis
+- `/epic --idea=IDEA-001` — create the next epic from an idea's MVP items (skips already-covered items)
 
 **Flags:**
+- `--idea=IDEA-NNN` — pull context from an existing idea document. Reads the idea's MVP scope, checks which items already have epics, and proposes the next uncovered item as the epic. Keep running `/epic --idea=IDEA-NNN` until all MVP items have epics. Updates the idea status: `draft` → `active` on first epic, `active` → `fulfilled` when all items are covered.
 - `--deep` — spawn product-owner and software-architect agents for Phases 2-3. Without this flag, you do the product analysis and technical routing yourself using your knowledge, stack.md, and WebSearch. Default is lightweight — no agents spawned.
 - `--fresh` — delete any existing checkpoint and start from scratch
 
@@ -105,6 +107,60 @@ Consider reviewing its docs/decisions/ manually before finalizing the epic.
 ## Phase 1: Capture the Initiative
 
 **Goal:** Understand what the founder wants at the product level — not implementation details.
+
+### If `--idea=IDEA-NNN` was provided:
+
+1. **Find and read the idea document** in `docs/features/` matching IDEA-NNN
+2. **Read existing epics** in `docs/epics/` — check which ones reference this idea (look for `idea: IDEA-NNN` in frontmatter or references in the body)
+3. **Map MVP coverage** — compare the idea's "Must Have" items against existing epics:
+
+```
+**Idea:** IDEA-001 — [Idea name]
+**MVP items:** [N] total
+
+**Already covered by epics:**
+- ✅ [Must Have item 1] → EPIC-001 ([epic name])
+- ✅ [Must Have item 2] → EPIC-001 ([epic name])
+
+**Not yet covered:**
+- ⬜ [Must Have item 3]
+- ⬜ [Must Have item 4]
+- ⬜ [Must Have item 5]
+
+**Next epic will cover:** [Must Have item 3] — [brief rationale for why this one is next]
+```
+
+4. **If ALL items are covered:** Update the idea's frontmatter to `status: fulfilled` and stop:
+   ```
+   ✅ All MVP items from IDEA-001 are covered by epics.
+   Idea status updated: active → fulfilled
+
+   Existing epics:
+   - EPIC-001: [name] — covers [items]
+   - EPIC-002: [name] — covers [items]
+
+   Next step: Run `/feature --epic=EPIC-NNN` in each service repo to break down into stories.
+   ```
+
+5. **If items remain:** Use the next uncovered item as the initiative description. Skip the interview — the idea document already has the context. Pre-fill Phase 1 output:
+   ```
+   Here's what I understand (from IDEA-001):
+
+   **The initiative:** [Next uncovered MVP item]
+   **The motivation:** [From the idea's problem statement and value proposition]
+   **The expected impact:** [From the idea's before/after description]
+   **Source idea:** IDEA-001 — [idea name]
+
+   Proceeding to product analysis.
+   ```
+
+6. **Update idea status if this is the first epic:**
+   - If idea status is `draft`, update to `status: active` in the idea document
+   - Commit: `git add docs/features/[idea-file] && git commit -m "chore: mark IDEA-001 active — first epic created"`
+
+7. **Proceed directly to Phase 2** — skip the interview questions (the idea already answered them).
+
+### If NO `--idea` flag (standard mode):
 
 1. **If arguments were provided**, mirror back understanding:
 
@@ -294,6 +350,8 @@ File: `docs/epics/YYYY-MM-DD-[epic-name].md`
 id: EPIC-[NNN]
 date: YYYY-MM-DD
 status: draft
+idea: [IDEA-NNN if driven by an idea, omit otherwise]
+mvp_items: ["item 1", "item 2"]  # which MVP items from the idea this epic covers
 po_recommendation: [strong-yes|yes-with-conditions|override]
 affected_repos: [awesome-app-api, awesome-app-fe]
 decisions: [ADR-005, ADR-006]

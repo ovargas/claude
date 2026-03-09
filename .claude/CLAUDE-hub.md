@@ -7,8 +7,10 @@ This is a **hub repository** — the product brain. It holds epics, cross-team d
 The hub captures WHAT to build and WHY. Service repos figure out HOW. Work flows like this:
 
 ```
-/idea → /epic → (decisions + agreements) → service repos run /feature → /plan → /implement
+/idea → /epic --idea=IDEA-NNN (repeat until all MVP items covered) → service repos run /feature --epic=EPIC-NNN → /plan → /implement
 ```
+
+An idea's MVP scope usually requires multiple epics. Run `/epic --idea=IDEA-NNN` repeatedly — each run reads the idea, checks which MVP items already have epics, and proposes the next one. The idea status tracks progress: `draft` → `active` (first epic) → `fulfilled` (all items covered).
 
 The hub's job is done when an epic is documented and agreements are written. Each service repo takes it from there independently.
 
@@ -46,7 +48,7 @@ Commands are the workflow. Each one has a specific job and a hard boundary: pre-
 - `/proposal` — Business proposal from an idea or feature — scope, timeline, infrastructure, costs
 
 ### Epic & Feature Flow
-- `/epic` — Define a product initiative, identify affected repos, create cross-team agreements
+- `/epic` — Define a product initiative, identify affected repos, create cross-team agreements. Use `--idea=IDEA-NNN` to create epics from MVP items (tracks coverage, updates idea status)
 - `/feature` — Spec out a feature (can be hub-level or driven by an epic)
 
 ### Planning & Implementation (for service repos)

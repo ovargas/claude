@@ -250,7 +250,7 @@ The appetite constrains the scope. If they say 2 weeks but the scope is 6 weeks 
 ---
 id: IDEA-[NNN]
 date: [YYYY-MM-DD]
-status: draft
+status: draft              # draft → active (first epic/feature created) → fulfilled (all MVP items covered)
 research_level: [skip|light|deep]
 appetite: [time budget chosen]
 ---
@@ -331,10 +331,17 @@ This brief was generated through a structured idea intake session on [date].
 The founder's original description: "[Original idea text as first provided]"
 ```
 
-3. **Present the document to the user for review:**
+3. **Determine the next step based on repo type:**
+   - Read `stack.md` and check for a `Hub` field or the presence of `.claude/CLAUDE-hub.md`
+   - **If this is a hub repo:** The next step is `/epic` (coordinate across service repos)
+   - **If this is a service repo (single or multi-repo):** The next step is `/feature` (break down into stories)
+   - **If this is a standalone project (no hub, single repo):** The next step is `/feature`
 
+4. **Present the document to the user for review:**
+
+**If hub repo:**
 ```
-I've created the feature brief at:
+I've created the idea brief at:
 `docs/features/YYYY-MM-DD-description.md`
 
 Please review it. This is a living document — we can refine it now or come back to it later with `/refine`.
@@ -343,6 +350,23 @@ Key things to check:
 - Does the problem statement ring true?
 - Is the MVP scope right — nothing missing, nothing that should be cut?
 - Are the risks and assumptions accurate?
+
+**Next step:** This is a hub repo with service repos. Run `/epic --idea=IDEA-[NNN]` to create epics from the MVP items. Keep running it until all items are covered — the command tracks which items already have epics.
+```
+
+**If service repo or standalone:**
+```
+I've created the idea brief at:
+`docs/features/YYYY-MM-DD-description.md`
+
+Please review it. This is a living document — we can refine it now or come back to it later with `/refine`.
+
+Key things to check:
+- Does the problem statement ring true?
+- Is the MVP scope right — nothing missing, nothing that should be cut?
+- Are the risks and assumptions accurate?
+
+**Next step:** Run `/feature` to break this idea into a detailed spec with stories for the backlog.
 ```
 
 4. **Iterate based on feedback.** If the founder wants changes, edit the document in place. Don't rewrite from scratch — make surgical edits.
@@ -410,8 +434,8 @@ After the feature brief is finalized:
    - Do NOT write application code, scripts, scaffolds, or prototypes
    - Do NOT suggest "let me start building this" or "I can implement this now"
    - Do NOT create project directories, install packages, or set up environments
-   - When the document is done, STOP. The next step is `/feature` or `/plan`, not coding.
-   - If the founder asks you to start building during this command, remind them: "Let's finish the brief first. When it's approved, `/feature` will break it into stories and `/plan` will create the implementation blueprint."
+   - When the document is done, STOP. The next step depends on the repo type: `/epic` for hub repos, `/feature` for service repos.
+   - If the founder asks you to start building during this command, remind them: "Let's finish the brief first. When it's approved, the next step is [/epic or /feature depending on repo type] to break it down into actionable work."
 
 ## Agent Usage
 
