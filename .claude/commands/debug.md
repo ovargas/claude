@@ -136,9 +136,42 @@ Formulate and verify the root cause.
 2. **Verify the hypothesis:**
    - Can you explain ALL reported symptoms with this root cause?
    - Would fixing this specific thing (and nothing else) resolve the bug?
-   - Are there other places in the code with the same pattern? (Are there more bugs lurking?)
 
 3. **If the hypothesis doesn't fully explain the symptoms,** go back to Phase 2 and trace deeper. Don't settle for a partial explanation.
+
+4. **Mandatory: Scan for all occurrences (pattern sweep).**
+
+   This is NOT optional. A root cause that exists in one place almost always exists in others. Before moving to Phase 4, you MUST search the entire codebase for every instance of the same pattern.
+
+   - **Identify the pattern:** What is the underlying mistake? (e.g., "missing nil check before accessing user.Profile", "raw SQL concatenation without parameterization", "no error return check after service call")
+   - **Build search queries:** Create Grep patterns that would catch this and similar variations. Use multiple queries — the pattern might appear with different variable names, types, or contexts.
+   - **Search the full codebase:** Run every query. Do NOT stop at the first few results.
+   - **Classify each occurrence:**
+
+   ```
+   **Pattern Sweep:** [description of the pattern being searched]
+
+   **Search queries used:**
+   - `[query 1]` — [N] results
+   - `[query 2]` — [N] results
+
+   **All occurrences found:** [total count]
+
+   | # | File:Line | Status | Context |
+   |---|---|---|---|
+   | 1 | `file.go:42` | 🔴 Confirmed bug | [brief description — the original finding] |
+   | 2 | `file.go:187` | 🔴 Confirmed bug | [same pattern, different code path] |
+   | 3 | `other.go:55` | 🟡 Likely bug | [similar pattern, needs verification] |
+   | 4 | `safe.go:90` | 🟢 Safe | [same pattern but already handled correctly — explain why] |
+   ```
+
+   - **Every 🔴 and 🟡 occurrence is part of the bug.** The investigation is not complete until all are documented.
+   - **If you find zero additional occurrences,** state that explicitly: "Pattern sweep found no other instances. The bug is isolated to the single location."
+   - **If you find many (10+) occurrences,** this is a systemic pattern, not a single bug. Flag it:
+     ```
+     ⚠️ Systemic issue: [N] occurrences of this pattern found across [N] files.
+     This is not a single bug — it's a codebase-wide pattern that needs a systematic fix.
+     ```
 
 ### Phase 4: Document Findings
 
@@ -154,19 +187,33 @@ Formulate and verify the root cause.
 [Clear explanation of what's broken and why — understandable to the founder without deep code knowledge]
 
 ### Technical Details
-- **Fault location:** `file.ext:line`
+- **Fault location:** `file.ext:line` (primary)
 - **What happens:** [Step-by-step of the failure path]
 - **Why it happens:** [The underlying cause — wrong assumption, missing check, data mismatch, etc.]
 
-### Affected Scope
-- [Other places that might be affected by the same root cause]
-- [Related functionality that should be tested after a fix]
+### All Occurrences (from pattern sweep)
+
+| # | File:Line | Status | Context |
+|---|---|---|---|
+| 1 | `file.ext:line` | 🔴 Confirmed | [original finding] |
+| 2 | `file.ext:line` | 🔴 Confirmed | [description] |
+| 3 | `file.ext:line` | 🟡 Likely | [description] |
+| ... | ... | ... | ... |
+
+**Total:** [N] confirmed bugs, [N] likely bugs, [N] safe instances
+**Scope:** [isolated | multi-file | systemic]
+
+### Related Functionality to Test After Fix
+- [Areas that depend on the affected code paths]
+- [Functionality that exercises the same pattern]
 
 ### Suggested Fix
 [Brief description of what needs to change — NOT the actual code, just the approach]
 - Option A: [approach] — [tradeoff]
 - Option B: [approach] — [tradeoff]
 - Recommended: [which option and why]
+
+**Note:** The fix must address ALL confirmed and likely occurrences, not just the primary one. A fix story that covers only one instance is incomplete.
 
 ### Reproduction Test
 [A test case description that would catch this bug — to be implemented with the fix]
@@ -194,15 +241,18 @@ Formulate and verify the root cause.
 
 [1-2 sentence explanation]
 
-**Location:** `file.ext:line`
+**Primary location:** `file.ext:line`
+**Pattern sweep:** [N] confirmed + [N] likely occurrences across [N] files
+**Scope:** [isolated | multi-file | systemic]
 **Suggested fix:** [brief approach]
-**Other affected areas:** [if any]
 
-The bug report has been updated with full investigation details.
+The bug report has been updated with full investigation details
+including all occurrences found.
 [If backlog was updated: "Backlog updated: [>] Doing → [=] Investigated"]
 
 **Next steps:**
 - Create a fix story: run `/feature --ticket=BUG-NNN` to spec the fix
+  (must cover ALL [N] confirmed occurrences)
 - Or jump straight to planning: run `/plan BUG-NNN` if the fix is straightforward
 ```
 
@@ -227,10 +277,12 @@ The bug report has been updated with full investigation details.
    - "The function assumes the user always has a profile, but users created via SSO skip profile creation" is a root cause
    - Find the WHY, not just the WHERE
 
-4. **Check for pattern bugs:**
-   - If the bug is "missing null check," search for other places with the same pattern
-   - A fix that addresses one instance but misses ten others is incomplete
-   - Note all affected locations in the investigation
+4. **HARD BOUNDARY — Pattern sweep is mandatory:**
+   - Phase 3 Step 4 (pattern sweep) is NOT optional and CANNOT be skipped
+   - A bug investigation that finds the root cause in one place but doesn't scan the full codebase is INCOMPLETE
+   - The investigation status cannot be set to `investigated` until the pattern sweep is done
+   - Every confirmed and likely occurrence must appear in the bug report's occurrence table
+   - If the team later finds an occurrence you missed, the investigation failed
 
 5. **Be honest about uncertainty:**
    - If you're not confident in the root cause, say so
