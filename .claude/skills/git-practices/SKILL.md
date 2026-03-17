@@ -274,3 +274,31 @@ locks:
 - **Backlog status (`backlog.md`):** Always committed on the feature branch. The `[ ]` → `[>]` → `[=]` → `[x]` lifecycle happens entirely on the branch and merges with the PR. Main's backlog only reflects completed work after PRs merge.
 
 **Multi-story branches:** When using `/next --current` to pick up multiple stories on a single branch, each story gets its own lock entry and `[>]` marker on the feature branch. `/pr` marks ALL stories as Done and removes ALL locks for that branch in a single commit.
+
+## Story Groups
+
+Stories within a feature can be grouped into execution tracks using backlog tags.
+
+**Backlog format with groups:**
+```markdown
+- [ ] S-010: Create user model | feature:FEAT-005 | group:1 | order:1 | service:be
+- [ ] S-011: Add user API endpoints | feature:FEAT-005 | group:1 | order:2 | service:be
+- [ ] S-012: Add user validation | feature:FEAT-005 | group:1 | order:3 | service:be
+- [ ] S-013: User profile page | feature:FEAT-005 | group:2 | order:1 | service:fe
+- [ ] S-014: User settings page | feature:FEAT-005 | group:2 | order:2 | service:fe
+```
+
+**Tags:**
+- `feature:FEAT-NNN` — parent feature
+- `group:N` — execution group. Stories in the same group are sequential and go on one branch.
+- `order:N` — execution order within the group. Processed in ascending order.
+- `service:xx` — which service/repo
+
+**Branch naming for groups:**
+- `/next --feature=FEAT-005` → branch: `feat/FEAT-005` (feature ID, not story ID)
+- `/next S-010` → branch: `feat/S-010` (story ID for single-story pickup)
+
+**Group flow:**
+1. `/next --feature=FEAT-005` locks all stories in the group, creates `feat/FEAT-005`
+2. `/next --current` advances through stories in `order:N` sequence
+3. `/pr` marks all stories as Done in one commit

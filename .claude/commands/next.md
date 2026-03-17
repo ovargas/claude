@@ -25,16 +25,18 @@ This command uses the `sonnet` model because it's a read-and-organize operation.
 - `/next S-005` — pick a specific story by reference
 - `/next backend` — pick the next item tagged for a specific service
 - `/next FEAT-003` — pick the next unfinished story from a specific feature
+- `/next --feature=FEAT-005` — pick up a feature's entire execution group: lock all sequential stories, create one branch, work through them with `/next --current`
 - `/next --auto` — pick highest-priority item without asking, skip all prompts
 - `/next --here` — work on the current branch, skip worktree creation
 - `/next --current` — skip branch AND worktree creation, work on whatever branch you're on now
 
 **Flags:**
+- `--feature=FEAT-NNN` — feature group mode. Reads the backlog, finds all stories for this feature in the same execution group (matching `group:N` tag), locks ALL of them at once, and creates a single branch named `feat/FEAT-NNN`. After setup, use `/next --current` to pick up each story in order (lowest `order:N` first). One branch, multiple stories, one PR at the end. See "Feature Group Flow" below for details.
 - `--auto` — autonomous mode: automatically pick the highest-priority ready item, skip the "continue in-progress or pick new" choice (always picks new if nothing is in Doing for this worktree, continues in-progress if something is), and skip all confirmations. Use this for Ralph Wiggum loops or batch processing.
 - `--here` — skip worktree creation and work directly on the current branch. Creates the feature branch in the current repo instead of a separate worktree. Useful for simple features, solo work, or repos where worktrees aren't practical. The lock still applies — parallel work just happens on branches instead of worktrees.
 - `--current` — skip both worktree AND branch creation. Work on the current branch as-is — no checkout, no new branch. The backlog item is still locked and tracked, but no git branching ceremony happens. Useful for solo work where you want to just pick stories and implement them sequentially on the same branch. You can keep running `/next --current` to pick up stories one by one until the feature is done.
 
-Flags combine: `/next --auto --current` picks the highest-priority item on the current branch and skips all prompts.
+Flags combine: `/next --auto --current` picks the highest-priority item on the current branch and skips all prompts. `/next --feature=FEAT-005 --here` creates the feature branch in-place instead of a worktree.
 
 ## Process
 
@@ -148,10 +150,17 @@ Record the current branch name for the lock entry and proceed to Step 5.
    - Bug fix → `fix`
    - Code restructuring → `refactor`
    - Maintenance → `chore`
-2. **Ticket ID** — from the story's ticket reference (e.g., `CTR-12`)
-3. **Branch name** → `<type>/<ticket-id>` (e.g., `feat/CTR-12`)
 
-If the ticket ID isn't in the backlog, ask the founder.
+2. **Ticket ID** — determine which ID to use, in this priority order:
+   - **If `--feature=FEAT-NNN` was passed** (group mode): use the feature ID: `feat/FEAT-005`. This is the ONLY case where the feature ID is used as the branch name — it represents a multi-story branch for the entire group.
+   - **If the story has an external ticket ID** (e.g., `CTR-12` from Jira/Linear), use that: `feat/CTR-12`
+   - **If no external ticket, use the story ID** (e.g., `S-006`): `feat/S-006`
+   - **For single-story pickup (no `--feature` flag): NEVER use the feature ID** (e.g., `FEAT-005`) as the branch name. The feature ID identifies the parent feature, not the unit of work.
+   - **NEVER create hybrid names** like `feat/FEAT-005-S6` — use one ID only
+
+3. **Branch name** → `<type>/<ticket-id>` (e.g., `feat/CTR-12` or `feat/S-006`)
+
+If the story has no identifiable ID at all, ask the developer.
 
 ### Step 5: Lock the Backlog Item
 
@@ -341,6 +350,63 @@ When done, run `/next --current` again to pick up the next story.
 
 ---
 
+## Feature Group Flow
+
+When `--feature=FEAT-NNN` is passed, the command operates in **group mode** — it sets up a single branch for an entire execution group of stories.
+
+### How It Works
+
+1. **Read the backlog** and find all stories with `feature:FEAT-NNN`
+2. **Determine the group:**
+   - If the feature has multiple groups (`group:1`, `group:2`, etc.), pick the **lowest group number** that still has `[ ]` Ready stories
+   - If a specific group is requested (`--feature=FEAT-005 --group=2`), use that group
+   - If stories don't have `group:` tags (older backlog format), treat all stories for the feature as a single group
+3. **Validate the group:**
+   - All stories in the group must be `[ ]` Ready (not locked, not in progress)
+   - If some are already done and some are ready, that's fine — only pick the ready ones
+   - If any are locked by another branch, STOP and report the conflict
+4. **Lock ALL stories in the group** in a single commit (Step 5)
+5. **Create one branch** named `feat/FEAT-NNN` (Step 6) — uses the feature ID, not a story ID
+6. **Mark the FIRST story as `[>]` Doing** on the feature branch (Step 7) — only one story starts as Doing
+
+### Subsequent `/next --current` Calls
+
+After the initial `--feature` setup, the developer uses `/next --current` to progress through the group:
+
+1. `/next --current` checks the backlog on the current branch
+2. Finds the current story in `[>]` Doing or `[=]` Implemented state
+3. If `[=]` (current story done): marks it `[x]` Done, picks the next story in the group by `order:N`, marks it `[>]`
+4. If `[>]` (still in progress): offers to continue or skip to next
+5. When no more stories remain in the group: reports "All stories in this group are done. Run `/pr` to create the pull request."
+
+### Presentation for Feature Group
+
+```
+**Feature group picked up:** [Feature name] (FEAT-NNN)
+**Group:** [N] — [group name if available]
+**Branch:** feat/FEAT-NNN
+**Stories in this group:** [N] total
+
+| # | Story | Status |
+|---|---|---|
+| 1 | S-010: [title] | [>] Starting now |
+| 2 | S-011: [title] | [ ] Locked, waiting |
+| 3 | S-012: [title] | [ ] Locked, waiting |
+
+**All stories locked** — no other worktree can pick these up.
+
+**Starting with:** S-010 — [story title]
+**What to build:** [acceptance criteria]
+
+**Next steps:**
+1. Run `/implement` to build S-010
+2. When done, run `/next --current` to advance to S-011
+3. Repeat until all stories are done
+4. Run `/pr` to create one PR for the entire group
+```
+
+---
+
 ## Important Guidelines
 
 1. **HARD BOUNDARY — No implementation:**
@@ -349,9 +415,10 @@ When done, run `/next --current` again to pick up the next story.
    - Do NOT start implementing even if the task seems simple
    - When context is loaded and the worktree is ready, STOP
 
-2. **One item at a time:**
-   - Only pick up one story per `/next` invocation
-   - If the founder wants to pick up more, they run `/next` again
+2. **One item at a time (unless `--feature` group mode):**
+   - In normal mode: only pick up one story per `/next` invocation
+   - In `--feature` group mode: lock all stories in the group, but only mark one as Doing
+   - If the developer wants to pick up more in normal mode, they run `/next` again
 
 3. **Respect the lock:**
    - Never pick an item that's locked by another worktree

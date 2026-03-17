@@ -458,35 +458,68 @@ After the spec is approved:
 
 2. **Read the codebase context** (stack.md, existing patterns) to estimate the right granularity. A story that's "add a new REST endpoint following the existing pattern" is different from "design a new real-time notification system."
 
-3. **Propose the stories:**
+3. **Propose the stories with execution groups:**
 
-```
-Here's how I'd break this into stories:
+   After identifying dependencies, group stories into **execution tracks** — sets of stories meant to be done together on a single branch.
 
-1. **[BE] [Story title]** — [What it does, why it's first]
-   Acceptance: [1-2 criteria]
+   **Grouping rules:**
+   - Stories that depend on each other sequentially → same group (one branch, done in order)
+   - Stories that are independent → separate groups (can be done in parallel on separate branches)
+   - Stories for different services → separate groups (different repos)
+   - A single standalone story → its own group (solo branch)
 
-2. **[BE] [Story title]** — [What it does]
-   Acceptance: [1-2 criteria]
-   Depends on: Story 1
+   ```
+   Here's how I'd break this into stories:
 
-3. **[FE] [Story title]** — [What it does]
-   Acceptance: [1-2 criteria]
-   Depends on: Story 1
+   **Group 1: [group name — e.g., "Backend data + API"]** (sequential, single branch)
+   1. **[BE] [Story title]** — [What it does, why it's first]
+      Acceptance: [1-2 criteria]
 
-Does this breakdown make sense? Too granular? Too coarse?
-```
+   2. **[BE] [Story title]** — [What it does, depends on Story 1]
+      Acceptance: [1-2 criteria]
 
-4. **After approval**, update the feature spec's Stories section with the final list.
+   3. **[BE] [Story title]** — [What it does, depends on Story 2]
+      Acceptance: [1-2 criteria]
+
+   **Group 2: [group name — e.g., "Frontend UI"]** (sequential, single branch)
+   4. **[FE] [Story title]** — [What it does, depends on Group 1 being merged]
+      Acceptance: [1-2 criteria]
+
+   5. **[FE] [Story title]** — [What it does, depends on Story 4]
+      Acceptance: [1-2 criteria]
+
+   **Group 3: [group name — e.g., "Documentation"]** (standalone)
+   6. **[Story title]** — [Independent, can be done anytime]
+      Acceptance: [1-2 criteria]
+
+   Execution strategy:
+   - Group 1 → `/next --feature=FEAT-NNN` creates one branch, work through with `/next --current`, one PR
+   - Group 2 → same pattern, after Group 1 is merged
+   - Group 3 → independent, separate branch anytime
+
+   Does this breakdown make sense? Too granular? Too coarse?
+   ```
+
+4. **After approval**, update the feature spec's Stories section with the final list including groups.
 
 5. **Add stories to the backlog:**
    - If `docs/backlog.md` exists:
      - Find the `## Ready` section (NOT `## Inbox` — stories from `/feature` are specced and ready for work)
      - If no `## Ready` section exists, create it between `## Doing` and `## Inbox` (or at the top if neither exists)
-     - Append each story under `## Ready`:
+     - Append each story under `## Ready` with group and order tags:
      ```markdown
-     - [ ] [Story title] | feature:[feature-name] | service:[be|fe] | spec:docs/features/YYYY-MM-DD-feature-name.md
+     - [ ] S-010: [Story title] | feature:FEAT-005 | group:1 | order:1 | service:be | spec:docs/features/YYYY-MM-DD-feature-name.md
+     - [ ] S-011: [Story title] | feature:FEAT-005 | group:1 | order:2 | service:be | spec:docs/features/YYYY-MM-DD-feature-name.md
+     - [ ] S-012: [Story title] | feature:FEAT-005 | group:1 | order:3 | service:be | spec:docs/features/YYYY-MM-DD-feature-name.md
+     - [ ] S-013: [Story title] | feature:FEAT-005 | group:2 | order:1 | service:fe | spec:docs/features/YYYY-MM-DD-feature-name.md
+     - [ ] S-014: [Story title] | feature:FEAT-005 | group:2 | order:2 | service:fe | spec:docs/features/YYYY-MM-DD-feature-name.md
+     - [ ] S-015: [Story title] | feature:FEAT-005 | group:3 | order:1 | spec:docs/features/YYYY-MM-DD-feature-name.md
      ```
+   - **Tags explained:**
+     - `feature:FEAT-NNN` — parent feature (existing)
+     - `group:N` — execution group number within the feature. Stories in the same group are sequential and go on one branch.
+     - `order:N` — execution order within the group. `/next --current` picks the lowest order number that's still `[ ]` Ready.
+     - `service:xx` — which service/repo (existing)
    - **IMPORTANT:** Stories go to `## Ready`, never `## Inbox`. They have a spec, acceptance criteria, and story breakdown — they are ready for `/next` to pick up.
    - If an external tracker is configured, create cards linked to the feature spec.
 
