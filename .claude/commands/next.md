@@ -153,9 +153,7 @@ Record the current branch name for the lock entry and proceed to Step 5.
 
 If the ticket ID isn't in the backlog, ask the founder.
 
-### Step 5: Lock the Backlog Item (BEFORE creating the worktree)
-
-**Important:** The lock must be committed BEFORE the worktree is created. This prevents a race condition where two concurrent `/next` calls pick the same item.
+### Step 5: Lock the Backlog Item
 
 Create or update `docs/backlog.lock`:
 
@@ -171,25 +169,39 @@ locks:
 
 If the lockfile already exists with other entries, append the new lock — don't overwrite existing ones.
 
-### Step 6: Update the Backlog and Commit
+**Commit the lock (mode-aware):**
 
-1. Move the item from Ready to Doing in `docs/backlog.md`:
-   - Change `- [ ]` to `- [>]` (in-progress marker)
-   - Add branch reference: `[>] S-003: Story title — `feat/CTR-12``
+- **Default or `--here` mode:** Commit the lock on main BEFORE creating the branch. This ensures all worktrees can see the lock immediately and prevents race conditions.
+  ```bash
+  git add docs/backlog.lock
+  git commit -m "chore(backlog): lock S-003 for feat/CTR-12"
+  ```
 
-2. **Commit both the lock and backlog update together:**
+- **`--current` mode:** Commit the lock on the current branch. No switching to main — `--current` is for solo sequential work where cross-worktree coordination isn't needed.
+  ```bash
+  git add docs/backlog.lock
+  git commit -m "chore(backlog): lock S-003 for feat/CTR-12"
+  ```
+
+**Important:** Only the lock file is committed here — NOT the backlog status change. The status update happens on the feature branch (Step 7) so it merges with the PR.
+
+### Step 6: Create the Branch (worktree, in-place, or current)
+
+**If `--current` was passed** — do nothing. No branch creation, no worktree. Work continues on the current branch. Skip to Step 7.
+
+**If `--here` was passed** but NOT `--current` — create a branch in-place:
+
+1. **Create and switch to the feature branch:**
    ```bash
-   git add docs/backlog.lock docs/backlog.md
-   git commit -m "chore(backlog): lock and start S-003 for feat/CTR-12"
+   git checkout -b <branch-name>
    ```
 
-This commit happens on the main branch so all worktrees can see it immediately.
+2. **Verify the branch:**
+   ```bash
+   git branch --show-current
+   ```
 
-### Step 7: Create the Branch (worktree, in-place, or current)
-
-**If `--current` was passed** — do nothing. No branch creation, no worktree. Work continues on the current branch. Skip to Step 8.
-
-**If `--here` was passed** but NOT `--current` — create a branch in-place (existing behavior below).
+No worktree is created. Work happens directly in the current repo directory.
 
 **If neither `--here` nor `--current` (default)** — create a worktree:
 
@@ -213,19 +225,23 @@ This commit happens on the main branch so all worktrees can see it immediately.
    ../{repo}-worktrees/<branch-name>
    ```
 
-**If `--here` was passed** — create a branch in place:
+### Step 7: Update the Backlog (on the feature branch)
 
-1. **Create and switch to the feature branch:**
+Now that you're on the feature branch (or the current branch for `--current`):
+
+1. Move the item from Ready to Doing in `docs/backlog.md`:
+   - Change `- [ ]` to `- [>]` (in-progress marker)
+   - Add branch reference: `[>] S-003: Story title — `feat/CTR-12``
+
+2. **Commit the backlog update on the feature branch:**
    ```bash
-   git checkout -b <branch-name>
+   git add docs/backlog.md
+   git commit -m "chore(backlog): start S-003 [TICKET-ID]"
    ```
 
-2. **Verify the branch:**
-   ```bash
-   git branch --show-current
-   ```
+**Why on the feature branch, not main:** The backlog status change merges with the code when the PR lands. This means main's backlog only reflects completed work — items stay as `[ ]` (Ready) on main until the PR merges. The lock file (committed on main in Step 5) prevents other worktrees from picking up the same item.
 
-No worktree is created. Work happens directly in the current repo directory.
+**For `--current` mode with sequential stories:** Each `/next --current` call adds another `[>]` marker on the feature branch. When the single PR merges, all story status changes land on main together.
 
 ### Step 8: Load Context
 
@@ -353,7 +369,8 @@ When done, run `/next --current` again to pick up the next story.
    - If `docs/backlog.md` doesn't exist: "No backlog found. Create one with `/feature` (which adds stories automatically) or create `docs/backlog.md` manually."
    - If `git wt` alias isn't available: "Git worktree alias `git wt` not found. Create the worktree manually: `git worktree add ../{repo}-worktrees/<branch> -b <branch>`"
 
-6. **Lock commit goes on main:**
-   - The backlog.lock and backlog.md updates are committed on the main/default branch
-   - This ensures all worktrees can pull and see the locks
-   - The worktree is created AFTER the lock is committed
+6. **Lock goes on main, backlog status goes on the feature branch:**
+   - The `backlog.lock` is committed on main (for default/here modes) so all worktrees can see locks
+   - The `backlog.md` status change (`[ ]` → `[>]`) is committed on the feature branch so it merges with the PR
+   - For `--current` mode, both lock and status go on the current branch (solo sequential work, no main switching)
+   - The worktree/branch is created AFTER the lock is committed on main

@@ -264,8 +264,13 @@ locks:
 
 **Rules:**
 - `/next` creates a lock entry when picking up a backlog item
-- `/pr` removes the lock entry after the PR is created
+- `/pr` removes the lock entry on the feature branch — the removal lands on main when the PR merges
 - `/worktree --remove` checks for stale locks and warns
 - Before picking an item, `/next` checks the lockfile — if the item is locked, it skips to the next
-- The lockfile is committed to the repo so all worktrees can see it
-- If a lock is stale (branch no longer exists, worktree removed), it can be cleaned up
+- If a lock is stale (branch no longer exists, PR merged, worktree removed), `/next` cleans it up automatically
+
+**Lock vs. backlog status — where each is committed:**
+- **Lock file (`backlog.lock`):** Committed on main for default/here modes (cross-worktree coordination). Committed on the current branch for `--current` mode (solo work, no main switching).
+- **Backlog status (`backlog.md`):** Always committed on the feature branch. The `[ ]` → `[>]` → `[=]` → `[x]` lifecycle happens entirely on the branch and merges with the PR. Main's backlog only reflects completed work after PRs merge.
+
+**Multi-story branches:** When using `/next --current` to pick up multiple stories on a single branch, each story gets its own lock entry and `[>]` marker on the feature branch. `/pr` marks ALL stories as Done and removes ALL locks for that branch in a single commit.
