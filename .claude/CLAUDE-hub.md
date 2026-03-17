@@ -62,6 +62,7 @@ Commands are the workflow. Each one has a specific job and a hard boundary: pre-
 - `/worktree` — Manage git worktrees (create, remove, list, clean)
 
 ### Quality & Maintenance
+- `/check` — Knowledge check: quiz the developer on technical decisions in the current work. Auto-triggers in `/plan` and `/pr` based on `~/.claude/settings.json` `knowledgeCheck` setting.
 - `/validate` — Compare feature spec against implementation — gap report. Use `--fix` to create stories from gaps.
 - `/review` — Code review
 - `/tech-review` — Technical review of architecture or approach
@@ -81,6 +82,7 @@ Commands are the workflow. Each one has a specific job and a hard boundary: pre-
 Skills are domain-specific standards loaded by implementation commands. In the hub, they're mostly relevant for git operations:
 
 - **git-practices** — Branch naming (`<type>/<ticket-id>`), commit format, PR format, worktree conventions, backlog lock format. Loaded by `/commit`, `/pr`, `/next`, `/worktree`.
+- **knowledge-check** — Protocol for validating developer understanding of AI-generated decisions. Loaded by `/plan` (after approval), `/pr` (before submission), and standalone `/check`. Trigger controlled by `~/.claude/settings.json` `knowledgeCheck` setting (`"on"`, `"strict"`, or `"off"`).
 
 The coding skills (`api-design`, `ui-design`, `data-layer`, `service-layer`) exist for service repos. They're loaded by `/implement` in those repos.
 

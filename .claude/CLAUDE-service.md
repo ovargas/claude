@@ -75,6 +75,7 @@ Commands are the workflow. Pre-implementation commands produce documents, never 
 - `/worktree` — Manage git worktrees (create, remove, list, clean)
 
 ### Quality & Maintenance
+- `/check` — Knowledge check: quiz the developer on technical decisions in the current work. Auto-triggers in `/plan` and `/pr` based on `~/.claude/settings.json` `knowledgeCheck` setting.
 - `/validate` — Compare feature spec against implementation — gap report with frontmatter. Use `--fix` to create backlog stories from gaps.
 - `/review` — Code review
 - `/tech-review` — Technical review of architecture or approach
@@ -103,6 +104,7 @@ Skills are domain-specific coding standards. `/implement` loads the relevant ski
 | **data-layer** | Data principles: schema design, migration safety, query performance | Working on models, migrations, DB code |
 | **service-layer** | Service principles: boundaries, transactions, side effects, business rules | Working on services, use cases, domain logic |
 | **checkpoints** | Progress checkpointing for long-running commands | `/implement`, `/debug`, `/feature`, `/plan`, `/epic` |
+| **knowledge-check** | Developer understanding validation — questions, evaluation, tutoring, logging | `/plan` (after approval), `/pr` (before submission), `/check` (standalone) |
 
 ### Project Skills
 
