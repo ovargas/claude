@@ -352,6 +352,29 @@ The plan is ready. Do you approve it for implementation?
 
 This is a hard gate. The plan must be `approved` before `/implement` will execute it.
 
+### Phase 3.5: Knowledge Check (after approval)
+
+**Skip this phase entirely if:**
+- `--auto` was passed (nobody is there to answer)
+- `~/.claude/settings.json` does not exist, or has no `knowledgeCheck` key, or `knowledgeCheck` is `"off"`
+
+**If `knowledgeCheck` is `"on"` or `"strict"`:**
+
+1. **Load the skill:** Read `.claude/skills/knowledge-check/SKILL.md`
+2. **Generate 3-5 questions** from the approved plan — focus on architectural decisions, tech choices, phase ordering, and tradeoffs (follow the skill's "Post-Plan Questions" section)
+3. **Present the questions** and wait for the developer's answers
+4. **Evaluate and provide tutoring response** — explain every answer's reasoning
+5. **Log results** to `docs/knowledge-checks/`
+
+**Soft mode (`"on"`):** Show results and proceed to Phase 4 regardless of score.
+
+**Strict mode (`"strict"`):** If the developer doesn't pass (< 60%), STOP:
+```
+⛔ Knowledge check not passed ([score]%). Review the explanations
+above, then run `/check` to try again. The plan is approved but
+implementation is blocked until the check passes.
+```
+
 ### Phase 4: Update Backlog
 
 After the plan is approved:

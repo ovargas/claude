@@ -103,6 +103,33 @@ If `--rebase` was passed:
 
 **Note:** Rebase rewrites history. This is expected for feature branches. The result is a clean, linear history on the target branch after merge.
 
+### Step 4.5: Knowledge Check (before PR)
+
+**Skip this step entirely if:**
+- `--auto` was passed (nobody is there to answer)
+- `~/.claude/settings.json` does not exist, or has no `knowledgeCheck` key, or `knowledgeCheck` is `"off"`
+
+**If `knowledgeCheck` is `"on"` or `"strict"`:**
+
+1. **Load the skill:** Read `.claude/skills/knowledge-check/SKILL.md`
+2. **Read the source material:**
+   - The full branch diff: `git diff <base>...HEAD`
+   - The implementation plan from `docs/plans/`
+   - The feature spec
+3. **Generate 3-5 questions** focused on implementation — code patterns, data flow, edge cases, testing decisions (follow the skill's "Pre-PR Questions" section)
+4. **Present the questions** and wait for the developer's answers
+5. **Evaluate and provide tutoring response** — explain the reasoning behind every code decision
+6. **Log results** to `docs/knowledge-checks/`
+
+**Soft mode (`"on"`):** Show results and proceed to Step 5 regardless of score.
+
+**Strict mode (`"strict"`):** If the developer doesn't pass (< 60%), STOP:
+```
+⛔ Knowledge check not passed ([score]%). Review the explanations
+above, then run `/check --pr` to try again. The PR will not be
+created until the check passes.
+```
+
 ### Step 5: Compose the PR
 
 **Title format** (from git-practices skill):
@@ -195,28 +222,34 @@ gh pr create --base develop --title "<title>" --body "..."
 
 ### Step 7: Update Backlog and Release Lock (on the PR branch)
 
-**These changes go on the feature branch, not main.** They will merge with the code when the PR lands, so the backlog reflects reality: the item is Done when the code is actually in main.
+**All backlog changes happen on the feature branch.** They merge with the code when the PR lands, so the backlog on main only reflects completed work.
 
-1. **Read `docs/backlog.lock`** — find the lock entry for this branch
-2. **If a lock exists:**
-   - Remove this branch's entry from the lockfile
-   - If no more entries remain, delete the lockfile entirely
-3. **Update `docs/backlog.md`** — move the item to Done:
-   - Change `- [>]` or `- [=]` to `- [x]` (handles both Doing and Implemented states)
+1. **Update `docs/backlog.md`** — move ALL items on this branch to Done:
+   - Find every item in Doing (`[>]`) or Implemented (`[=]`) state that references this branch
+   - Change each `- [>]` or `- [=]` to `- [x]`
    - Add PR reference: `[x] S-003: Story title — PR #[number]`
-4. **Commit both changes on the feature branch:**
+   - **Handle multiple stories:** If this branch worked on multiple stories (common with `/next --current` workflows), update ALL of them to Done
+
+2. **Read `docs/backlog.lock`** — find lock entries for this branch:
+   - Remove ALL lock entries for this branch (there may be multiple if several stories were picked up with `/next --current`)
+   - If no more entries remain, delete the lockfile entirely
+
+3. **Commit changes on the feature branch:**
    ```bash
-   git add docs/backlog.lock docs/backlog.md
-   git commit -m "chore(backlog): mark [ITEM-ID] done and release lock [TICKET-ID]"
+   git add docs/backlog.md docs/backlog.lock
+   git commit -m "chore(backlog): mark stories done and release locks [TICKET-ID]"
    ```
-5. **Push the new commit** so the PR includes it:
+
+4. **Push the new commit** so the PR includes it:
    ```bash
    git push
    ```
 
-**Why on the branch, not main:** When the PR merges, the backlog update and lock release land on main together with the code. This means the item stays locked and in Doing until the PR is actually merged — which is the correct definition of done. Other worktrees running `/next` will see the lock until the merge happens, preventing conflicts.
+**Why on the branch, not main:** When the PR merges, the backlog updates and lock releases land on main together with the code. Items stay locked on main until the PR is actually merged — which is the correct definition of done.
 
-**Note on stale locks:** If a PR is abandoned or a branch is deleted without merging, the lock becomes stale. `/next` detects stale locks automatically and offers to clean them up (see `/next` Step 2).
+**Note on lock merge conflicts (worktree mode):** In default/worktree mode, the lock was committed on main before the branch was created. If main's lockfile has been modified since (other locks added/removed by parallel worktrees), the merge may conflict on `backlog.lock`. Resolve by keeping the other locks and removing only this branch's entries. As a safety net, `/next` Step 2 automatically detects and cleans stale locks from merged PRs.
+
+**Note on stale locks:** If a PR is abandoned or a branch is deleted without merging, the lock becomes stale. `/next` detects stale locks automatically and cleans them up (see `/next` Step 2).
 
 ### Step 8: Report
 
@@ -228,8 +261,8 @@ gh pr create --base develop --title "<title>" --body "..."
 - **Status:** [open | draft]
 
 **Backlog updated (included in PR):**
-- **Lock released:** ✅ [ITEM-ID] unlocked
-- **Item moved:** Doing → Done (PR #[number])
+- **Stories marked Done:** [list each story, e.g., S-001, S-002, S-003]
+- **Locks released:** ✅ [branch-name] unlocked
 - These changes merge with the code when the PR lands
 
 **Cleanup (optional):**
