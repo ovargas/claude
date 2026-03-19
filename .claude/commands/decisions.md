@@ -40,40 +40,62 @@ Extract the topic from `$ARGUMENTS`. The topic can be:
 
 ### Step 2: Search Project Knowledge
 
-Read the relevant sources in this priority order:
+**First, determine the repo context:**
+- Read `stack.md` — check if there's a `Hub` field pointing to a sibling hub repo
+- If a hub exists, you have TWO decision pools: this repo's local decisions AND the hub's cross-team decisions
+- If no hub, this is a standalone repo — search only local sources
 
+**Source priority order:**
+
+**Local sources (this repo):**
 1. **`stack.md`** — tech stack definition (language, framework, database, etc.)
 2. **`.claude/skills/`** — all skill files. Match by:
    - Skill name (e.g., `go-practices` for "go")
    - Skill `stack:` frontmatter (e.g., `stack: go, gin` matches "gin")
    - Content grep (e.g., "mockery" appears in `go-practices`)
-3. **`docs/decisions/`** — architectural decision records (ADRs). These explain WHY something was chosen.
+3. **`docs/decisions/`** — local architectural decision records (ADRs). Choices that affect only this repo: ORM, auth library, database, local patterns. These explain WHY something was chosen.
 4. **`docs/features/`** — feature specs. Rich in product decisions: YAGNI verdicts, scope boundaries ("explicitly NOT building"), rabbit holes to avoid, founder context, and incremental delivery strategy. Search by feature ID, keyword, or topic.
-5. **`docs/epics/`** — epic documents (hub repos). Contain cross-team decisions, routing decisions (why this repo handles X), and agreements that constrain features.
-6. **`docs/plans/`** — implementation plans. Contain technical approach decisions: why a certain ordering was chosen, which patterns to follow, risk mitigations, and architectural tradeoffs made during planning.
-7. **`CLAUDE.md`** — project-wide behavioral directives
-8. **`.claude/commands/`** — workflow commands (for process questions like "how does branching work?")
+5. **`docs/plans/`** — implementation plans. Contain technical approach decisions: why a certain ordering was chosen, which patterns to follow, risk mitigations, and architectural tradeoffs made during planning.
+6. **`CLAUDE.md`** — project-wide behavioral directives
+7. **`.claude/commands/`** — workflow commands (for process questions like "how does branching work?")
+
+**Hub sources (if `stack.md` has a Hub reference):**
+8. **`{hub-path}/docs/decisions/`** — cross-team decision records. API contracts, shared data formats, naming conventions, event schemas that ALL service repos must follow. These are binding constraints, not suggestions.
+9. **`{hub-path}/docs/epics/`** — epic documents. Contain cross-team routing decisions (why this repo handles X), agreements between repos, and the original context for features driven by epics.
+
+**When presenting results from the hub, label them clearly:**
+```
+- **ISO 8601 for all API dates** — cross-team agreement, all repos must follow
+  → `../my-app-hub/docs/decisions/2026-02-15-date-format-convention.md` (hub)
+  Context: Agreed during EPIC-001 to prevent timezone bugs between services.
+```
+
+**Decision record location rule:**
+- Cross-team decisions (API contracts, shared formats, conventions between repos) → hub's `docs/decisions/`
+- Local technical decisions (ORM choice, library picks, architecture within this repo) → this repo's `docs/decisions/`
+- If a decision is in the wrong place, note it but still report it
 
 **Search strategy:**
 - If the topic matches a skill name or stack tag → read that skill first
 - If the topic is a practice area → grep all skills for the keyword
-- If the topic matches a decision record → read the ADR
+- If the topic matches a decision record → read the ADR (check both local AND hub)
 - If the topic is about a feature or why something was built a certain way → search `docs/features/` for YAGNI verdicts, scope boundaries, and founder context
 - If the topic is about technical approach → search `docs/plans/` for approach decisions and risk mitigations
-- If the topic is about cross-team agreements or why a repo handles something → search `docs/epics/`
-- If no match → search broadly across all sources, report what you find
+- If the topic is about cross-team agreements or why a repo handles something → search hub's `docs/epics/` and `docs/decisions/`
+- If no match → search broadly across all sources (local + hub), report what you find
 
 **What to extract from each source type:**
 
-| Source | What to look for |
-|--------|-----------------|
-| `docs/decisions/` | The decision, alternatives considered, and the reasoning |
-| `docs/features/` | YAGNI verdicts, "Explicitly NOT building" sections, "Rabbit holes to avoid", founder context, incremental delivery strategy |
-| `docs/epics/` | Cross-team agreements, repo routing decisions, shared conventions |
-| `docs/plans/` | Approach rationale ("why this ordering"), pattern choices, risk/fallback decisions |
-| `.claude/skills/` | Coding conventions, architectural patterns, tooling choices |
-| `stack.md` | Technology choices (what, not why — the why lives in decisions/) |
-| `CLAUDE.md` | Behavioral directives, project-wide rules |
+| Source | Where | What to look for |
+|--------|-------|-----------------|
+| `docs/decisions/` | Local | The decision, alternatives considered, and the reasoning |
+| `docs/decisions/` | Hub | Cross-team agreements, API contracts, shared conventions (binding) |
+| `docs/features/` | Local | YAGNI verdicts, "Explicitly NOT building" sections, "Rabbit holes to avoid", founder context, incremental delivery strategy |
+| `docs/epics/` | Hub | Cross-team agreements, repo routing decisions, shared conventions |
+| `docs/plans/` | Local | Approach rationale ("why this ordering"), pattern choices, risk/fallback decisions |
+| `.claude/skills/` | Local | Coding conventions, architectural patterns, tooling choices |
+| `stack.md` | Local | Technology choices (what, not why — the why lives in decisions/) |
+| `CLAUDE.md` | Local | Behavioral directives, project-wide rules |
 
 ### Step 3: Present the Answer
 
