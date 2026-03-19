@@ -279,6 +279,54 @@ func TestUserService_CreateUser(t *testing.T) {
 - Let `t.Cleanup` handle expectation verification — don't call `AssertExpectations` manually when using `NewMock*(t)`
 - If a test doesn't set expectations for a method, calling that method will fail the test — this is correct behavior
 
+## JSON Serialization
+
+<!-- CUSTOMIZE: Change the casing convention if your project uses a different style -->
+
+### Convention: lowerCamelCase
+
+All JSON field names use **lowerCamelCase**. Define explicit `json` struct tags on every exported field — never rely on Go's default (which would expose PascalCase).
+
+```go
+type User struct {
+    ID        string    `json:"id"`
+    Email     string    `json:"email"`
+    FirstName string    `json:"firstName"`
+    LastName  string    `json:"lastName"`
+    CreatedAt time.Time `json:"createdAt"`
+    UpdatedAt time.Time `json:"updatedAt"`
+    IsActive  bool      `json:"isActive"`
+}
+```
+
+**Rules:**
+- Every exported struct field that appears in JSON must have an explicit `json:"..."` tag
+- Use `json:"-"` for fields that must never be serialized (passwords, internal flags)
+- Use `json:"field,omitempty"` for optional fields that should be omitted when zero-valued
+- Nested structs follow the same convention: `json:"billingAddress"`, not `json:"billing_address"`
+- Acronyms follow camelCase, not ALLCAPS: `json:"userId"`, `json:"apiKey"`, `json:"htmlContent"` — not `json:"userID"`, `json:"APIKey"`
+
+```go
+type CreateUserRequest struct {
+    Email     string `json:"email" binding:"required,email"`
+    FirstName string `json:"firstName" binding:"required"`
+    LastName  string `json:"lastName" binding:"required"`
+    Password  string `json:"password" binding:"required,min=8"`
+}
+
+type UserResponse struct {
+    ID        string `json:"id"`
+    Email     string `json:"email"`
+    FirstName string `json:"firstName"`
+    LastName  string `json:"lastName"`
+    IsActive  bool   `json:"isActive"`
+    CreatedAt string `json:"createdAt"`
+    Password  string `json:"-"`  // never serialize
+}
+```
+
+**If a different project needs `snake_case`:** change this section to document `snake_case` conventions (`json:"first_name"`, `json:"created_at"`) and update the examples. The rest of the skill is unaffected.
+
 ## Error Handling
 
 ### Domain Errors
