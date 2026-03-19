@@ -55,7 +55,7 @@ my-app-api-worktrees/        ← worktrees live here
 │   ├── pattern-finder.md    ← Finds existing implementation patterns
 │   ├── docs-locator.md      ← Finds relevant docs, plans, decisions
 │   └── security-reviewer.md ← Security review of code changes
-├── commands/                ← 23 workflow commands
+├── commands/                ← 24 workflow commands
 │   ├── idea.md              ← Capture a new product concept
 │   ├── epic.md              ← Hub-level initiative with cross-team agreements
 │   ├── feature.md           ← Spec a feature with YAGNI challenge + story groups
@@ -75,6 +75,7 @@ my-app-api-worktrees/        ← worktrees live here
 │   ├── debug.md             ← Investigate issues with mandatory pattern sweep
 │   ├── check.md             ← Knowledge check: quiz on technical decisions
 │   ├── proposal.md          ← Business proposal (scope, timeline, costs)
+│   ├── decisions.md         ← Query project conventions and design patterns
 │   ├── docs.md              ← Generate project documentation
 │   ├── status.md            ← Project status briefing
 │   ├── handoff.md           ← Session continuity notes
@@ -574,6 +575,7 @@ The `backlog.lock` file on main prevents both from picking the same item.
 | `/bug` | Service | Document a bug | Bug report |
 | `/debug` | Service | Investigate with pattern sweep | Diagnosis + all occurrences |
 | `/check` | Any | Knowledge check quiz | Score + tutoring |
+| `/decisions` | Any | Query project conventions | Bullet list + source refs |
 | `/proposal` | Any | Business proposal | Scope, timeline, costs doc |
 | `/docs` | Any | Generate project documentation | Guides, references, runbooks |
 | `/status` | Any | Project status briefing | Status report |
@@ -660,6 +662,11 @@ Available in: `/feature`, `/plan`, `/implement`, `/debug`
 - `--pr` — focus questions on implementation patterns
 - `--verbose` — study mode showing key concepts as hints before answering
 - Can specify: feature ID (`/check FEAT-007`) or plan path
+
+#### `/decisions`
+- `--verbose` — include short code examples from the source files
+- `--diff` — show which conventions are customized vs still using template defaults
+- Can specify: topic (`/decisions testing`), language (`/decisions go`), layer (`/decisions service`), or concept (`/decisions mockery`)
 
 #### `/docs`
 - `--update <path>` — update an existing doc to match current codebase state
