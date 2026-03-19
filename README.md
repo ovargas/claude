@@ -79,12 +79,13 @@ my-app-api-worktrees/        ← worktrees live here
 │   ├── status.md            ← Project status briefing
 │   ├── handoff.md           ← Session continuity notes
 │   └── update-workflow.md   ← Sync workflow files from template repo
-└── skills/                  ← 7 domain-specific standards
+└── skills/                  ← 8 domain-specific standards
     ├── git-practices/       ← Branch, commit, PR, worktree, backlog lock conventions
     ├── api-design/          ← API endpoint and route handler standards
     ├── ui-design/           ← Frontend component and styling standards
     ├── data-layer/          ← Database, migration, query standards
-    ├── service-layer/       ← Business logic and service standards
+    ├── service-layer/       ← Business logic, interfaces, dependency injection standards
+    ├── go-practices/        ← Go-specific: DI pattern, mockery, project structure (stack: go)
     ├── checkpoints/         ← Checkpoint protocol for resuming multi-phase commands
     └── knowledge-check/     ← Developer understanding validation protocol
 ```
@@ -218,14 +219,15 @@ Service repo (my-app-api):
     → Phase 2: YAGNI check (skipped for epic-driven — PO already assessed)
     → Phase 3: Research codebase patterns and technical feasibility
     → Phase 4: Define scope, definition of done, success metrics
+    → Phase 4.5: Incremental delivery conversation (thinnest slice, milestones)
     → Phase 5: Write feature spec
-    → Phase 6: Break into stories with execution groups
+    → Phase 6: Break into vertically-sliced stories with execution groups
     → Output:
         docs/features/2026-02-16-websocket-backend.md (FEAT-001)
         Stories added to docs/backlog.md in Ready column (with group/order tags)
 ```
 
-Stories are organized into execution groups (see Story Groups below) that define which stories belong together on a single branch and in what order they should be implemented.
+Stories are vertically sliced — each story delivers one complete capability through all layers, not one technical layer across all capabilities. They're organized into execution groups (see Story Groups below) that define which stories belong together on a single branch.
 
 ### Phase 4: Planning (Service Repo)
 
@@ -236,7 +238,7 @@ Service repo (my-app-api):
       ✅ Pass — all TBD items resolved (or)
       ⛔ HALT — "Database: TBD, need to choose before proceeding"
     → Phase 1: Codebase analysis (locator, analyzer, pattern-finder agents)
-    → Phase 2: Write step-by-step plan with file references and verification
+    → Phase 2: Write plan with vertical phases (each phase = one end-to-end capability)
     → Phase 3: Review and validate
     → Phase 3.5: Knowledge check (if enabled — see Knowledge Checks)
     → Output: docs/plans/2026-02-16-websocket-backend.md
@@ -734,6 +736,21 @@ The `/implement` command reads `stack.md` to identify your frameworks, then load
 | `service-layer` | Business logic organization, domain rules, orchestration, transactions | Implementing services and use cases |
 | `checkpoints` | Protocol for saving and resuming multi-phase commands | `/implement`, `/debug`, `/feature`, `/plan`, `/epic` |
 | `knowledge-check` | Developer understanding validation: question generation, evaluation, tutoring | `/plan`, `/pr`, `/check` |
+| `go-practices` | Go-specific: unexported struct/exported constructor pattern, mockery, project layout | Implementing `.go` files (auto-matched via `stack: go`) |
+
+### Where to Put Architectural Conventions
+
+Not all coding knowledge goes in the same place. Here's how to decide:
+
+**Generic skills** (e.g., `service-layer`, `api-design`) — for universal architectural principles that apply regardless of language or framework. Examples: "all dependencies must be interfaces," "services own transaction boundaries," "business rules must be independently testable." These skills ship with the template and have `<!-- CUSTOMIZE -->` markers where you fill in language-specific details.
+
+**Stack-specific skills** (e.g., `go-gin`, `react-nextjs`) — for concrete patterns tied to your stack. Examples: "use mockery to generate mocks from interfaces," "define interfaces in the same package as the consumer," "use Gin's `ShouldBindJSON` for request validation." Create these with `stack:` frontmatter so they auto-load alongside generic skills during `/implement`.
+
+**`CLAUDE.md`** — for short, project-wide behavioral directives that don't fit in a skill. Examples: "always run `make lint` before committing," "this repo uses a monorepo structure," "never import from `internal/legacy`." Keep this file lean — if a rule needs examples or explanation, it belongs in a skill.
+
+**`stack.md`** — for factual stack definitions, not conventions. What framework, what ORM, what test runner — not how to use them.
+
+The general rule: if it's a *principle*, it goes in a generic skill. If it's a *pattern with code examples*, it goes in a stack-specific skill. If it's a *one-liner rule*, it goes in `CLAUDE.md`.
 
 ### Customizing Skills
 
@@ -743,6 +760,8 @@ Two approaches:
 2. **Keep generic + add stack skills** — Leave generic skills as templates. Create stack-specific skills (e.g., `go-gin/SKILL.md`, `react-nextjs/SKILL.md`) with `stack:` frontmatter for auto-matching. Good if you share the library across projects with different stacks.
 
 ## Key Design Principles
+
+**Vertical slicing.** Every story delivers one complete user-facing capability through all layers (data model → logic → API → UI). Never "all migrations first, then all services." After the first story, something must be testable or demoable. `/feature` Phase 4 forces a conversation about incremental delivery before stories are written, and `/plan` organizes phases by capability, not by layer.
 
 **Deliberate pipeline.** Every command produces a specific artifact and stops. No command jumps ahead. `/feature` writes specs, never code. `/plan` writes plans, never code. Only `/implement` writes code.
 
@@ -761,6 +780,8 @@ Two approaches:
 **Mandatory pattern sweep.** Bug investigations must scan the entire codebase for all instances of the root cause pattern. A bug report that only covers one location is incomplete.
 
 **Knowledge as a process.** The knowledge check system ensures developers understand AI-generated decisions, not just execute them. It teaches through the process of asking and explaining.
+
+**Founder input, not just founder approval.** Every major phase in `/feature` ends with an open-ended checkpoint: "Anything I should know that I haven't asked about?" This gives the founder a structured place to add business constraints, user insights, technical preferences, or context the AI couldn't infer from the codebase. Founder observations are captured in a "Founder Context" section in the spec so they persist into planning and implementation.
 
 **Founder decides.** Agents recommend, the founder chooses. Every agent presents reasoning and options. No agent makes final calls.
 

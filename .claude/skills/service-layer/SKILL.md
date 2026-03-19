@@ -38,10 +38,44 @@ The service layer is the home for business logic — the rules and processes tha
 - Methods: verb + noun describing the business action (`createProject`, `assignTask`, `calculateInvoiceTotal`)
 - Avoid generic names: `processData`, `handleStuff`, `doThing`
 
-### Dependencies
-- Services depend on repositories/data layer — never directly on the database
-- Services may depend on other services, but watch for circular dependencies
-- External services (email, payments, file storage) are wrapped in their own service — business logic doesn't call APIs directly
+### Dependencies — Interface-Based Design
+
+**All dependencies must be interfaces, not implementations.** A service never instantiates its own dependencies — they are injected through the constructor (or function parameters) as interfaces.
+
+This is non-negotiable because:
+- It enables unit testing without real databases, APIs, or external services
+- It makes dependencies explicit and visible in the constructor signature
+- It allows swapping implementations (e.g., switching from PostgreSQL to MySQL, or from a real email sender to a test spy)
+
+<!-- CUSTOMIZE: Replace with your language's interface/protocol pattern -->
+
+**Rules:**
+- Every dependency a service uses must be defined as an interface (or protocol/trait/abstract class, depending on language)
+- The interface lives where the consumer is, not where the implementation is (dependency inversion)
+- Constructors accept interfaces, never concrete types
+- If you find yourself importing a concrete implementation inside a service, you're violating this rule
+- Factory functions or dependency injection wiring lives in a separate composition layer (e.g., `main`, `app setup`, or a DI container)
+
+**Example structure:**
+```
+// The service defines WHAT it needs (interface)
+type UserRepository interface {
+    FindByID(id string) (*User, error)
+    Save(user *User) error
+}
+
+// The service accepts the interface, not the implementation
+type UserService struct {
+    repo UserRepository       // interface, not *PostgresUserRepo
+    email EmailSender         // interface, not *SMTPClient
+}
+
+// Wiring happens elsewhere (main.go, app setup, etc.)
+```
+
+- Services depend on repository interfaces — never directly on the database or ORM
+- Services may depend on other service interfaces, but watch for circular dependencies
+- External services (email, payments, file storage) are defined as interfaces and wrapped in their own implementation — business logic doesn't call APIs directly
 
 ## Patterns
 
@@ -118,10 +152,22 @@ Every service function should be clear about:
 - Error cases: "when the user doesn't have permission, it throws [specific error]"
 - Edge cases: boundary values, null handling, concurrent modifications
 
-### How to Test
-- Mock the data layer — test business logic, not database queries
-- Mock external services — test integration logic, not third-party APIs
+### How to Test — Interface Mocking
+
+Because all dependencies are interfaces (see Dependencies above), testing is straightforward: inject mock implementations that you control.
+
+<!-- CUSTOMIZE: Replace with your stack's preferred mock generation tool -->
+
+**Prefer generated mocks over hand-written mocks.** Use your stack's mock generation tooling (e.g., `mockery` for Go, `unittest.mock` for Python, `jest.mock` for TypeScript) rather than writing mock implementations by hand. Generated mocks:
+- Stay in sync with the interface automatically
+- Reduce boilerplate and token usage
+- Provide consistent assertion patterns across the codebase
+
+**Mock rules:**
+- Mock repository interfaces — test business logic, not database queries
+- Mock external service interfaces — test integration logic, not third-party APIs
 - Don't mock other services in the same domain unless testing in isolation is genuinely necessary
+- Every mock should verify the contract: correct method calls, expected arguments, proper error handling
 - Use descriptive test names: "should reject assignment when user is not a project member"
 
 ### Rules
@@ -129,3 +175,4 @@ Every service function should be clear about:
 - Test the happy path AND the rejection path for every rule
 - Integration tests (real database, real services) are valuable but separate from unit tests
 - Keep tests fast — if a test needs a database, it's an integration test, not a unit test
+- Never test implementation details — test behavior through the interface
