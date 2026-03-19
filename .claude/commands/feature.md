@@ -124,7 +124,21 @@ Is that right?
    - **Who asked for it?** Was this user-reported, founder intuition, or a technical need?
    - **What happens without it?** Is there a workaround? How painful is the current state?
 
-3. Wait for confirmation before proceeding.
+3. **Open the floor** before proceeding:
+
+```
+Before we move on — is there anything I should know that I haven't asked about?
+
+Business constraints, technical preferences, things you've learned from users,
+related work in other repos, timeline pressure, team context — anything that
+should shape this feature that I might not find in the codebase.
+
+If nothing comes to mind, just say "move on" and we'll continue.
+```
+
+**This is not a formality.** If the founder adds context, absorb it fully. It may change the YAGNI assessment, the scope, or the story breakdown. Capture anything substantial as a "Founder context" note that persists into the spec.
+
+If the founder says "move on" or similar, proceed immediately without further prompting.
 
 ---
 
@@ -172,6 +186,13 @@ Present your assessment honestly:
 If the verdict is DEFER or SKIP, discuss it with the founder. They may have context you don't. But don't be a pushover — if the YAGNI alarm is ringing, say so.
 
 If the founder overrides a SKIP/DEFER recommendation, note it in the spec: "YAGNI flag: Founder chose to proceed despite [concern]. Revisit if [condition]."
+
+After presenting the YAGNI assessment:
+
+```
+Anything to add before we move to research? Constraints I'm not seeing,
+context about why this matters more (or less) than I think?
+```
 
 ---
 
@@ -279,6 +300,45 @@ How will you know this feature was worth building? Define before building, not a
 - [Condition that means this feature isn't working] — e.g., "If less than 30% of users keep notifications enabled after 2 weeks, revisit the approach"
 ```
 
+### Incremental Delivery Strategy
+
+**This is a critical conversation.** Before documenting anything, force a discussion about how to slice this feature into demoable increments. The goal is to ship the thinnest possible working version first, then layer capabilities.
+
+**Ask the founder:**
+
+```
+Before we break this into stories, let's talk about incremental delivery.
+
+**The Thinnest Slice:** If you could only ship ONE piece of this feature
+and nothing else, what would it be? What's the smallest thing that a user
+could actually try and give feedback on?
+
+**Walking Skeleton:** What's the minimum path through all layers
+(data → logic → API → UI) that produces a working, demoable result?
+Not a polished result — a working one.
+
+**Milestone Thinking:** If this feature has 3 stories, after which story
+do you have something you could show to someone? That's your first milestone.
+```
+
+**Why this matters:**
+- A plan that does "all migrations first, then all services, then all endpoints" means nothing works until everything works
+- A plan that does "user registration end-to-end, then login end-to-end, then password reset end-to-end" means you have something working after story 1
+- The founder must define what "working" means for the first slice — even if it's rough
+
+**Capture the answer.** The incremental strategy goes into the spec and directly shapes how Phase 6 breaks stories:
+
+```
+**Incremental delivery:**
+- **Slice 1 (first demoable result):** [What works after this slice]
+- **Slice 2:** [What's added]
+- **Slice 3:** [What completes the feature]
+
+Each slice delivers a complete vertical path (data model → business logic → API → UI for that capability).
+```
+
+If the founder doesn't have a strong opinion, propose a slicing based on user-facing capabilities, not technical layers.
+
 ### Value Statement
 
 One clear sentence that answers: **"Why are we building this instead of something else?"**
@@ -286,6 +346,21 @@ One clear sentence that answers: **"Why are we building this instead of somethin
 This goes at the top of the spec. It's the thing you re-read when you're deep in implementation and wondering if you're still solving the right problem.
 
 Discuss and iterate on all of the above with the founder before documenting.
+
+**Final input checkpoint before writing the spec:**
+
+```
+We're about to lock this into a spec. Last call:
+
+- Anything missing from the scope, the DoD, or the success metrics?
+- Any constraints or observations you want captured that we haven't discussed?
+- Anything about the incremental delivery slicing you want to adjust?
+
+After this, I'll write the spec. You can still edit it, but it's easier
+to get it right now than to refine later.
+```
+
+If the founder adds context here, incorporate it into the spec. If they say "looks good" or similar, proceed.
 
 ---
 
@@ -388,6 +463,12 @@ Manual:
 **Failure signal:**
 - [Condition that means we should reconsider]
 
+## Founder Context
+
+[Observations, constraints, and decisions provided by the founder during the intake process that are not captured elsewhere in this spec. This section preserves context that shaped the feature but doesn't fit neatly into scope, DoD, or metrics.]
+
+[If no additional context was provided, omit this section entirely.]
+
 ## Implementation Hints
 
 ### Existing patterns to follow
@@ -447,20 +528,44 @@ Key things to check:
 
 ## Phase 6: Story Breakdown
 
-**Goal:** Split the feature into implementable stories for the backlog.
+**Goal:** Split the feature into implementable stories for the backlog, using **vertical slicing** — each story delivers one complete, testable capability through all layers.
 
 After the spec is approved:
 
-1. **Analyze the feature for natural break points.** Each story should be:
-   - Implementable in a single focused session
-   - Independently testable (even if not independently shippable)
-   - Tagged with a service if multi-repo (`backend`, `frontend`, etc.)
+1. **Re-read the incremental delivery strategy** from Phase 4. The slices the founder defined are your primary guide for story boundaries.
 
-2. **Read the codebase context** (stack.md, existing patterns) to estimate the right granularity. A story that's "add a new REST endpoint following the existing pattern" is different from "design a new real-time notification system."
+2. **Slice vertically, not horizontally.** Each story must deliver a complete path through whatever layers it touches (data model → business logic → API → UI for that one capability). **NEVER** create stories like "create all migrations" or "add all API endpoints" — these are horizontal layers, not stories.
 
-3. **Propose the stories with execution groups:**
+   **Vertical slice test:** After completing this story, can someone test or demo a real user-facing behavior? If yes, it's a good story. If no, it's a technical task that should be part of a larger story.
 
-   After identifying dependencies, group stories into **execution tracks** — sets of stories meant to be done together on a single branch.
+   **When a story needs multiple layers:**
+   - The story includes ALL layers needed for that one capability
+   - Within the story, implementation order follows natural dependency: data model → business logic → API → UI
+   - But the story itself is defined by the capability, not the layer
+
+   **Example — WRONG (horizontal slicing):**
+   ```
+   Story 1: Create users table migration
+   Story 2: Create user service with CRUD
+   Story 3: Create user API endpoints
+   Story 4: Create user registration page
+   Story 5: Create user login page
+   ```
+   ⛔ Nothing works until Story 4 is done. Stories 1-3 can't be demoed.
+
+   **Example — RIGHT (vertical slicing):**
+   ```
+   Story 1: User registration end-to-end (migration + model + service + endpoint + form)
+   Story 2: User login end-to-end (session model + auth service + endpoint + form)
+   Story 3: Password reset end-to-end (token model + email service + endpoints + form)
+   ```
+   ✅ After Story 1, a user can register. You have a working product.
+
+3. **Read the codebase context** (stack.md, existing patterns) to estimate the right granularity. A story that's "add a new REST endpoint following the existing pattern" is different from "design a new real-time notification system."
+
+4. **Propose the stories with execution groups:**
+
+   After slicing vertically, group stories into **execution tracks** — sets of stories meant to be done together on a single branch.
 
    **Grouping rules:**
    - Stories that depend on each other sequentially → same group (one branch, done in order)
@@ -471,26 +576,31 @@ After the spec is approved:
    ```
    Here's how I'd break this into stories:
 
-   **Group 1: [group name — e.g., "Backend data + API"]** (sequential, single branch)
-   1. **[BE] [Story title]** — [What it does, why it's first]
+   **Group 1: [group name — e.g., "Core user flow"]** (sequential, single branch)
+   1. **[Story title — a complete vertical capability]** — [What a user can do after this story is done]
+      Layers: [migration + model + service + endpoint + UI page]
+      Acceptance: [1-2 criteria — user-visible behavior]
+      Demo: [What you can show someone after this story]
+
+   2. **[Story title — next vertical capability]** — [What's added to the product]
+      Layers: [model + service + endpoint + UI page]
+      Acceptance: [1-2 criteria]
+      Demo: [What's now possible that wasn't before]
+
+   **Group 2: [group name — e.g., "Admin capabilities"]** (sequential, single branch)
+   3. **[Story title]** — [What it delivers end-to-end]
+      Layers: [...]
+      Acceptance: [1-2 criteria]
+      Demo: [What you can show]
+
+   **Group 3: [group name — e.g., "Polish & edge cases"]** (standalone)
+   4. **[Story title]** — [Independent, can be done anytime]
       Acceptance: [1-2 criteria]
 
-   2. **[BE] [Story title]** — [What it does, depends on Story 1]
-      Acceptance: [1-2 criteria]
-
-   3. **[BE] [Story title]** — [What it does, depends on Story 2]
-      Acceptance: [1-2 criteria]
-
-   **Group 2: [group name — e.g., "Frontend UI"]** (sequential, single branch)
-   4. **[FE] [Story title]** — [What it does, depends on Group 1 being merged]
-      Acceptance: [1-2 criteria]
-
-   5. **[FE] [Story title]** — [What it does, depends on Story 4]
-      Acceptance: [1-2 criteria]
-
-   **Group 3: [group name — e.g., "Documentation"]** (standalone)
-   6. **[Story title]** — [Independent, can be done anytime]
-      Acceptance: [1-2 criteria]
+   Milestones:
+   - After Story 1: [What's demoable — "a user can register and see their profile"]
+   - After Story 2: [What's added — "a user can log in and manage their session"]
+   - After Group 1: [Feature state — "core user management is complete"]
 
    Execution strategy:
    - Group 1 → `/next --feature=FEAT-NNN` creates one branch, work through with `/next --current`, one PR
@@ -498,6 +608,7 @@ After the spec is approved:
    - Group 3 → independent, separate branch anytime
 
    Does this breakdown make sense? Too granular? Too coarse?
+   Is the first story thin enough to give you something demoable quickly?
    ```
 
 4. **After approval**, update the feature spec's Stories section with the final list including groups.
@@ -550,10 +661,13 @@ After the spec is approved:
    - "80% of assigned tasks are acknowledged within 2 hours of notification" is
    - Include a failure signal — the condition under which you'd reconsider the feature
 
-5. **Stories should be ordered:**
-   - Backend before frontend when there are dependencies
-   - Data model before business logic before UI
-   - The first story should be the riskiest or most uncertain piece (fail fast)
+5. **Stories must be vertical slices, not horizontal layers:**
+   - Each story delivers one complete user-facing capability through all layers it touches
+   - NEVER create stories like "add all migrations" or "create all endpoints" — these are horizontal layers, not stories
+   - Within a single story, implementation order is naturally layered (data model → logic → API → UI)
+   - But the story boundary is the CAPABILITY, not the layer
+   - The first story should be the thinnest possible working slice (fail fast, demo early)
+   - After story 1 completes, something must be testable or demoable
 
 6. **Track progress with TodoWrite:**
    - Create todos for each phase

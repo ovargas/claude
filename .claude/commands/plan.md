@@ -121,11 +121,23 @@ Before writing a single line of the plan, understand the terrain. This phase is 
    - Need a database migration? Find the latest migration. Its format, naming convention, rollback strategy.
    - Need new tests? Find the test file for the most similar feature. Its patterns, fixtures, assertions.
 
-3. **Identify dependencies and ordering.** What must exist before other things can be built? Map the dependency graph:
-   - Database changes before backend logic
-   - Backend endpoints before frontend consumption
-   - Shared types/interfaces before implementation
-   - Core functionality before edge case handling
+3. **Identify vertical capabilities and ordering.** The plan must follow the feature spec's incremental delivery strategy. Each plan phase delivers one complete, testable capability — not one technical layer.
+
+   **First, identify the vertical slices** from the feature spec's stories. Each story represents a user-facing capability that touches multiple layers. The plan phases map to these capabilities, not to layers.
+
+   **Then, within each capability**, map the natural dependency order:
+   - Data model changes needed for THIS capability
+   - Business logic for THIS capability
+   - API endpoints for THIS capability
+   - Frontend/UI for THIS capability
+   - Tests for THIS capability
+
+   **Between capabilities**, identify which must come first:
+   - Shared foundations (auth, config) that multiple capabilities need → first phase
+   - Capability A that Capability B builds on → A before B
+   - Independent capabilities → can be done in any order
+
+   **NEVER organize the plan as:** "Phase 1: All migrations, Phase 2: All services, Phase 3: All endpoints." This means nothing works until everything is done. **ALWAYS organize as:** "Phase 1: User registration end-to-end, Phase 2: Login end-to-end" — something works after Phase 1.
 
 4. **Present your analysis:**
 
@@ -141,10 +153,15 @@ Before writing a single line of the plan, understand the terrain. This phase is 
 - [Finding 1 with file:line reference]
 - [Finding 2 with file:line reference]
 
-**Dependency order:**
-1. [Layer/component 1] — must come first because [reason]
-2. [Layer/component 2] — depends on 1
-3. [Layer/component 3] — depends on 1 and 2
+**Incremental delivery plan:**
+1. [Capability 1] — after this phase, [what's testable/demoable]
+   Layers: [migration + model + service + endpoint + UI]
+2. [Capability 2] — after this phase, [what's added]
+   Layers: [model + service + endpoint + UI]
+3. [Capability 3] — after this phase, [feature is complete]
+   Layers: [service + endpoint + UI]
+
+Each phase delivers a working vertical slice. Nothing is "all migrations first."
 
 Any concerns before I write the plan?
 ```
@@ -186,49 +203,63 @@ Before starting implementation:
 
 ---
 
-## Phase 1: [Descriptive Name — e.g., "Data Model & Migration"]
+## Phase 1: [Vertical Capability — e.g., "User Registration (end-to-end)"]
 
 ### Overview
-[What this phase accomplishes and why it's first]
+[What user-facing capability this phase delivers. After this phase, what can a user do or what can you demo?]
 
-### Step 1.1: [Specific Change]
-**File:** `path/to/file.ext` ([modify|create])
-**Pattern:** Follow `path/to/similar/file.ext:42`
+**After this phase:** [Concrete demoable result — e.g., "A user can register with email/password and see a confirmation page"]
 
-**What to do:**
-[Clear description of the change. Not pseudocode — a description specific enough that an implementation agent can execute it without ambiguity.]
-
-**Details:**
-- [Specific field, method, or component to add]
-- [How it connects to existing code]
-- [Edge cases to handle]
-
-### Step 1.2: [Specific Change]
-**File:** `path/to/file.ext` ([modify|create])
-**Pattern:** Follow `path/to/similar/file.ext:78`
+### Step 1.1: [Data model for this capability]
+**File:** `path/to/migration.ext` ([create])
+**Pattern:** Follow `path/to/similar/migration.ext:42`
 
 **What to do:**
-[Description]
+[Migration/model changes needed for THIS capability only — not all migrations for the entire feature.]
+
+### Step 1.2: [Business logic for this capability]
+**File:** `path/to/service.ext` ([create|modify])
+**Pattern:** Follow `path/to/similar/service.ext:78`
+
+**What to do:**
+[Service/logic for THIS capability only.]
+
+### Step 1.3: [API endpoint for this capability]
+**File:** `path/to/handler.ext` ([create|modify])
+**Pattern:** Follow `path/to/similar/handler.ext:15`
+
+**What to do:**
+[Endpoint(s) for THIS capability only.]
+
+### Step 1.4: [UI/frontend for this capability]
+**File:** `path/to/component.ext` ([create|modify])
+**Pattern:** Follow `path/to/similar/component.ext:30`
+
+**What to do:**
+[UI for THIS capability only. If backend-only feature, skip this step.]
 
 ### Phase 1 Verification
 
 **Automated:**
-- [ ] [Command to verify — e.g., `npm run typecheck`, `python manage.py migrate --check`]
-- [ ] [Test command — e.g., `pytest tests/models/test_notifications.py`]
+- [ ] [Migration runs: e.g., `python manage.py migrate --check`]
+- [ ] [Tests pass: e.g., `pytest tests/test_registration.py`]
+- [ ] [Type check: e.g., `npm run typecheck`]
 
 **Manual:**
-- [ ] [Manual check if applicable]
+- [ ] [End-to-end demo: e.g., "Register a new user, verify confirmation page shows"]
 
-**Stop here.** Verify Phase 1 before proceeding. If automated checks fail, fix before moving on.
+**Stop here.** This phase should produce a testable vertical slice. If the demo doesn't work, fix before moving on.
 
 ---
 
-## Phase 2: [Descriptive Name — e.g., "Backend Logic & API"]
+## Phase 2: [Next Vertical Capability — e.g., "User Login (end-to-end)"]
 
 ### Overview
-[What this phase accomplishes]
+[What this phase adds to the product. What's now possible that wasn't before?]
 
-[Same step structure as Phase 1...]
+**After this phase:** [e.g., "A user can register AND log in. Session management works."]
+
+[Same step structure as Phase 1 — each step handles one layer for THIS capability]
 
 ### Phase 2 Verification
 
@@ -236,21 +267,21 @@ Before starting implementation:
 - [ ] [Verification commands]
 
 **Manual:**
-- [ ] [Manual checks]
+- [ ] [End-to-end demo for this capability]
 
 **Stop here.** Verify Phase 2 before proceeding.
 
 ---
 
-## Phase 3: [Descriptive Name — e.g., "Frontend Implementation"]
+## Phase 3: [Next Vertical Capability — e.g., "Password Reset (end-to-end)"]
 
-[Same structure...]
+[Same structure — one complete capability through all layers]
 
 ---
 
-## Phase 4: [Descriptive Name — e.g., "Integration & Edge Cases"]
+## Phase 4: [Polish & Edge Cases — e.g., "Error Handling, Validation, Edge Cases"]
 
-[Same structure...]
+[This is the ONLY phase that can be cross-cutting. After all vertical slices are working, add hardening: input validation, error states, edge cases, performance. This phase is optional for MVP.]
 
 ---
 

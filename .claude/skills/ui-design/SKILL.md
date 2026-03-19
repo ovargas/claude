@@ -91,6 +91,46 @@ These are the rules for writing frontend code in this project. Follow them when 
 - Use landmark elements (`<main>`, `<nav>`, `<aside>`)
 - Use lists (`<ul>`, `<ol>`) for groups of related items
 
+## Navigation — No Dead Ends
+
+**Every screen must have an escape route.** If the user reaches a view with no back button, no navigation drawer, no tab bar, and no other way to leave — that's a dead end. Dead ends are especially common in mobile UIs after completing a flow (success screens, confirmation pages, detail views opened from notifications).
+
+This is not a hard requirement to add navigation elements to every screen. It is a **mandatory check during `/implement`**: when building a view, assess whether the user has a way to navigate away. If they don't, raise it.
+
+### When Implementing a Screen
+
+After the UI is functional, check:
+1. **Does this screen have a back button, close button, or navigation element** (tab bar, drawer, breadcrumb) that takes the user somewhere else?
+2. **If the user completes the action on this screen** (submits a form, finishes a flow), **where do they go?** If the answer is "nowhere," there's a problem.
+3. **If the user arrived here from a notification or deep link**, can they get to the home screen?
+
+### If a Dead End Is Found
+
+Don't silently add navigation. Instead, flag it:
+
+```
+⚠️ Navigation dead end detected:
+
+This screen ([screen name]) has no way to navigate away after [action].
+The user would be stuck here.
+
+Some options:
+1. Add a "Back to [parent]" button in the header/toolbar
+2. Add a "Go to Home" fallback link
+3. Auto-navigate to [destination] after [action] completes
+4. This is intentional (explain why)
+5. Something else — describe what you'd prefer
+
+What would you like to do?
+```
+
+### Common Dead-End Patterns to Watch For
+- **Success/confirmation screens** — "Payment complete!" with no next step
+- **Detail views opened from push notifications** — no navigation stack to pop back to
+- **Modal flows that dismiss to nowhere** — the originating screen was unmounted
+- **Error screens** — "Something went wrong" with no retry or home link
+- **Onboarding final step** — welcome screen with no route to the main app
+
 ## Error Handling
 
 - Show error states inline near the failed action, not as distant toast notifications (unless the action was global)
