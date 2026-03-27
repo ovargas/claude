@@ -230,7 +230,7 @@ Plan: [docs/plans/... | not yet planned]
 While reading the project state, flag anything that looks off:
 
 - **Stuck work:** Something in Doing (`[>]`) for more than a few days with no handoff or progress
-- **Implemented but not PR'd:** Items marked `[=]` (implemented) — remind the founder to run `/pr` to ship them
+- **Implemented but not PR'd:** Items marked `[=]` (implemented) — remind the founder to run `/pr` to ship them. **Note:** If the work was done on main (no feature branch), `[=]` should not appear — `/implement` goes directly to `[x]`. If you see `[=]` on main, flag it as a status inconsistency and suggest updating to `[x]`.
 - **Orphaned stories:** Stories in the backlog that don't link to a feature spec
 - **Missing plans:** Features with stories in Ready but no implementation plan
 - **Stale specs:** Feature specs in draft status for more than 2 weeks

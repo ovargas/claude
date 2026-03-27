@@ -41,11 +41,17 @@ When this command is invoked:
    - If a plan path was provided, read it
    - If a story was specified, find its parent plan in `docs/plans/`
    - If bare `/implement`, check `docs/backlog.md` for items in Doing (`[>]`) status. Read the associated plan.
-   - If the item is marked as Implemented (`[=]`), **STOP:**
-     ```
-     ✅ This story is already implemented (marked [=] in the backlog).
-     It's waiting for a PR. Run `/pr` to commit and create the pull request.
-     ```
+   - If the item is marked as Implemented (`[=]`):
+     - **If on a feature branch → STOP:**
+       ```
+       ✅ This story is already implemented (marked [=] in the backlog).
+       It's waiting for a PR. Run `/pr` to commit and create the pull request.
+       ```
+     - **If on main/master/develop:** This is a stale status — `/implement` on main should have set `[x]`, not `[=]`. Fix it now: update `[=]` to `[x]` in the backlog, release any lock, update the feature spec status if all stories are done, and commit. Then **STOP** with:
+       ```
+       ✅ This story was already implemented. Fixed stale status: [=] → [x].
+       Nothing to implement. Run `/next` to pick up new work.
+       ```
    - If the item is marked as Done (`[x]`), **STOP:**
      ```
      ✅ This story is already done (marked [x] in the backlog).
@@ -174,7 +180,14 @@ Beginning Phase 1: [Phase name]
    - Mark completed phases with checkmarks
    - Note any deviations from the plan with brief explanations
 
-4. **Update the backlog:**
+4. **Update the backlog (branch-aware):**
+
+   First, detect the working mode:
+   ```bash
+   current_branch=$(git branch --show-current)
+   ```
+
+   **If on a feature branch (not main/master/develop)** — PR flow:
    - Read `docs/backlog.md` and find the item currently in Doing (`[>]`) for this branch/story
    - Change `[>]` to `[=]` (implemented, pending PR):
      ```
@@ -189,7 +202,24 @@ Beginning Phase 1: [Phase name]
      ```
    - **Note:** The lock in `backlog.lock` stays active until `/pr` releases it — the work is done but the branch still owns the item
 
-5. **Present completion:**
+   **If on main/master/develop** — direct completion (no PR coming):
+   - Read `docs/backlog.md` and find the item currently in Doing (`[>]`) for this story
+   - Change `[>]` directly to `[x]` (done) — skip `[=]` entirely since there's no PR step:
+     ```
+     - [x] S-003: Story title — completed on main
+     ```
+   - If `docs/backlog.lock` has a lock entry for this item, remove it (no PR will release it)
+   - If removing the last entry, delete `docs/backlog.lock` entirely
+   - Update the **feature spec** frontmatter: check if ALL stories for this feature are now `[x]` in the backlog. If yes, update the feature's `status:` to `done`. If some remain, update to `active` if it was still `draft`.
+   - Commit all status updates together:
+     ```bash
+     git add docs/backlog.md docs/plans/[plan-file] docs/backlog.lock docs/features/[feature-file]
+     git commit -m "chore(backlog): complete S-003, all statuses updated [TICKET-ID]"
+     ```
+
+5. **Present completion (branch-aware):**
+
+   **If on a feature branch:**
    ```
    Implementation complete for [story/feature].
 
@@ -203,6 +233,24 @@ Beginning Phase 1: [Phase name]
    - Run `/review` for a code review before committing
    - Complete manual testing items above
    - Run `/pr` when ready (auto-commits and creates the PR)
+   ```
+
+   **If on main/master/develop:**
+   ```
+   Implementation complete for [story/feature].
+
+   **Summary:**
+   - [N] files modified, [N] files created
+   - All automated checks passing
+   - [N] manual verification items remaining
+   - Backlog updated: [>] Doing → [x] Done
+   - Feature status: [updated status]
+   - Lock released: [yes/no lock existed]
+
+   **Next steps:**
+   - Run `/review` for a code review
+   - Complete manual testing items above
+   - Run `/next` to pick up more work
    ```
 
 ---

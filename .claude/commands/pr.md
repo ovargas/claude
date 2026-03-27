@@ -39,6 +39,15 @@ Flags combine freely: `/pr --rebase --draft` rebases and creates a draft PR. By 
 1. **Parse `$ARGUMENTS`** for ticket ID, `--draft`, `--manual`, `--no-commit`, `--rebase` flags, and `--base` target
 2. **Read the current branch name:**
    - Extract the type and ticket ID (e.g., `feat/CTR-12` → type: `feat`, ticket: `CTR-12`)
+   - **If on main/master/develop → STOP:**
+     ```
+     ⚠️ You're on the main branch. `/pr` creates a pull request from a feature branch into main.
+
+     If you're working directly on main, there's no PR needed — `/implement` already
+     marked your stories as done ([x]) and updated the feature status.
+
+     If you intended to work on a branch, run `/next` to pick up work on a new branch.
+     ```
    - If the branch doesn't follow `<type>/<ticket-id>` format, ask for the ticket ID
 3. **Determine the base branch:**
    - Use `--base` argument if provided

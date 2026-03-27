@@ -234,23 +234,26 @@ No worktree is created. Work happens directly in the current repo directory.
    ../{repo}-worktrees/<branch-name>
    ```
 
-### Step 7: Update the Backlog (on the feature branch)
+### Step 7: Update the Backlog (branch-aware)
 
-Now that you're on the feature branch (or the current branch for `--current`):
+Now that you're on the working branch:
 
 1. Move the item from Ready to Doing in `docs/backlog.md`:
    - Change `- [ ]` to `- [>]` (in-progress marker)
-   - Add branch reference: `[>] S-003: Story title — `feat/CTR-12``
+   - **If on a feature branch:** add branch reference: `[>] S-003: Story title — `feat/CTR-12``
+   - **If on main/master/develop:** add direct marker: `[>] S-003: Story title — working on main`
 
-2. **Commit the backlog update on the feature branch:**
+2. **Commit the backlog update:**
    ```bash
    git add docs/backlog.md
    git commit -m "chore(backlog): start S-003 [TICKET-ID]"
    ```
 
-**Why on the feature branch, not main:** The backlog status change merges with the code when the PR lands. This means main's backlog only reflects completed work — items stay as `[ ]` (Ready) on main until the PR merges. The lock file (committed on main in Step 5) prevents other worktrees from picking up the same item.
+**Branch flow context (feature branch):** The backlog status change merges with the code when the PR lands. This means main's backlog only reflects completed work — items stay as `[ ]` (Ready) on main until the PR merges. The lock file (committed on main in Step 5) prevents other worktrees from picking up the same item.
 
-**For `--current` mode with sequential stories:** Each `/next --current` call adds another `[>]` marker on the feature branch. When the single PR merges, all story status changes land on main together.
+**Direct-to-main context (main/master/develop):** Status changes are committed directly on main. No PR step will follow — `/implement` will advance `[>]` directly to `[x]` on completion (skipping `[=]`). There is no lock needed for solo main-branch work, but one is still created for consistency and to signal that work is in progress.
+
+**For `--current` mode with sequential stories:** Each `/next --current` call adds another `[>]` marker. When on a feature branch, the single PR merges all status changes to main together. When on main, each story completes independently.
 
 ### Step 8: Load Context
 
