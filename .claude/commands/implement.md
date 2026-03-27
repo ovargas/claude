@@ -115,12 +115,17 @@ Beginning Phase 1: [Phase name]
 
 3. **After all steps in the phase, run phase verification:**
    - Execute every automated verification command listed in the plan
+   - **DRY check:** Quickly scan the code written in this phase — did it duplicate logic that already exists in the codebase? Three lines of duplicated code beats a premature abstraction, but if the same pattern is repeated 3+ times across files, extract it. Flag it briefly:
+     ```
+     DRY: [clean | extracted X into Y | noted: Z duplicated in A and B, acceptable for now]
+     ```
    - Report results clearly:
      ```
      **Phase [N] Verification:**
      - [x] `npm run typecheck` — passed
      - [x] `pytest tests/models/` — 12 tests passed
      - [ ] `npm run lint` — 2 warnings (non-blocking)
+     - [x] DRY check — [status]
      ```
 
 4. **If verification fails:**
