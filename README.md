@@ -562,6 +562,7 @@ The `backlog.lock` file on main prevents both from picking the same item.
 | `/epic` | Hub | Define cross-team initiative | Epic + decision records |
 | `/feature` | Service | Spec a feature with YAGNI check | Feature spec + stories (with groups) |
 | `/research` | Any | Deep-dive research | Research document |
+| `/contracts` | Service | Extract, define, validate API contracts | Schema files in `contracts/` |
 | `/plan` | Service | Technical implementation plan | Plan with file references |
 | `/next` | Service | Pick work, lock, create worktree | Locked item + worktree |
 | `/implement` | Worktree | Execute plan phase by phase | Working code |
@@ -626,6 +627,14 @@ Available in: `/feature`, `/plan`, `/implement`, `/debug`
 #### `/research`
 - `--scope=market|technical|codebase` — limit research to a specific domain
 - `--deep` — spawn specialized research agents (default: direct WebSearch/Grep/Read)
+
+#### `/contracts`
+- `extract <source>` — extract contracts from SPEC.md or feature spec
+- `validate` — check all contract files for completeness
+- `sync` — compare contracts against implementation, flag drift
+- `list` — show all defined contracts and their status
+- `--format=json|go|typescript|proto` — output format (default: JSON Schema)
+- `--hub` — also check hub decisions for cross-team contracts
 
 #### `/plan`
 - `--auto` — skip confirmations, auto-approve the plan
