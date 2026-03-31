@@ -75,10 +75,51 @@ When this command is invoked:
      ```
    - Do NOT proceed with implementation on an unapproved plan. This is not optional.
 
-3. **Read the full context:**
+3. **Check payload/contract completeness (hard gate):**
+
+   Before writing any code, scan the plan and feature spec for every API endpoint, event, or inter-service message this story touches. For each one, verify that the **request payload**, **response payload**, and **error responses** are fully defined — every field, every type, every constraint.
+
+   **Check contract files first:** If `contracts/` directory exists, look for matching schema files (`contracts/endpoints/`, `contracts/models/`, `contracts/events/`). These are the authoritative source — they override anything in prose docs.
+
+   **If no contract files exist**, check the feature spec and hub decisions (`docs/decisions/`, hub `docs/decisions/`) for payload definitions.
+
+   **If ANY endpoint/event this story implements has an undefined or incomplete payload → HARD STOP:**
+   ```
+   ⛔ Incomplete payload definitions detected. Cannot proceed.
+
+   The following endpoints/events have missing or incomplete contracts:
+
+   - POST /api/users/register
+     ❌ Request payload: missing field types for `preferences`
+     ❌ Error responses: not defined
+     ✅ Response payload: complete
+
+   - event: user.registered
+     ❌ Not defined anywhere
+
+   **Action required:**
+   - Define the missing payloads in contract files (`contracts/endpoints/`, `contracts/events/`)
+   - Or add complete payload definitions to the feature spec
+   - Then re-run `/implement`
+
+   I will NOT guess payload shapes. Every field must be explicitly defined
+   before implementation begins.
+   ```
+
+   **What "complete" means:**
+   - Every field has a name, type, and whether it's required or optional
+   - Nested objects are fully expanded (no "user object" without field definitions)
+   - Error responses list the possible error codes and their payloads
+   - Enum/union types list all possible values
+   - If the endpoint references a shared model, that model must also be defined
+
+   **This gate is not optional.** Do not proceed with "I'll use reasonable defaults" or "I'll follow common patterns." The whole point is to prevent the implementation from diverging from the agreed-upon contracts.
+
+4. **Read the full context:**
    - The implementation plan (required — refuse to implement without one unless the story is trivially small)
    - The feature spec it references
    - `stack.md` — the tech stack and conventions
+   - Contract files from `contracts/` (if they exist) — these are **hard constraints**, not suggestions
    - Any research or decision docs referenced
 
 4. **If `--phase=N` was specified**, skip to that phase. Otherwise, start from the beginning (or resume from the last completed phase if continuing a session).

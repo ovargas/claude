@@ -10,10 +10,11 @@ Work flows through a deliberate pipeline. Each step produces a specific artifact
 /feature → /plan → /next → /implement → /pr
 ```
 
-- `/feature` captures WHAT to build (with YAGNI challenge)
-- `/plan` creates HOW to build it (with architectural gate)
+- `/feature` captures WHAT to build (with YAGNI challenge and API contract definition)
+- `/contracts` extracts and validates API contracts as concrete schema files
+- `/plan` creates HOW to build it (with architectural gate and payload completeness check)
 - `/next` picks up the work, locks it, creates a worktree — backlog: `[ ]` → `[>]`
-- `/implement` executes the plan phase by phase with verification — backlog: `[>]` → `[=]`
+- `/implement` executes the plan phase by phase with verification — backlog: `[>]` → `[=]` (branch) or `[>]` → `[x]` (main)
 - `/pr` auto-commits, creates the PR, and releases the lock — backlog: `[=]` → `[x]`
 
 If this service is part of a multi-repo product, features can be driven by hub epics (`/feature --epic=EPIC-NNN`), which brings in cross-team decisions as constraints.
@@ -24,6 +25,7 @@ If this service is part of a multi-repo product, features can be driven by hub e
 - **`docs/features/`** — Feature specs. Each one describes a feature, its YAGNI assessment, scope, definition of done, and story breakdown.
 - **`docs/plans/`** — Implementation plans. Step-by-step technical instructions with file references, patterns to follow, and verification commands.
 - **`docs/decisions/`** — Local architectural decision records. Non-obvious technical choices made for this repo.
+- **`contracts/`** — API contract files (endpoints, models, events) as JSON Schema. Authoritative source of truth for payload shapes. `/plan` and `/implement` hard-stop if contracts are missing for endpoints they touch.
 - **`docs/backlog.md`** — Service backlog with four states: `[ ]` Ready, `[>]` Doing, `[=]` Implemented, `[x]` Done.
 - **`docs/backlog.lock`** — Lockfile preventing two worktrees from picking the same item. Managed by `/next` and `/pr`.
 - **`docs/proposals/`** — Business proposals generated from ideas or features.
@@ -61,7 +63,8 @@ Commands are the workflow. Pre-implementation commands produce documents, never 
 - `/feature --epic=EPIC-NNN` — Spec a feature driven by a hub epic (reads epic + decisions as constraints)
 
 ### Planning & Analysis
-- `/plan` — Create a technical implementation plan. Phase 0 runs the architect gate automatically.
+- `/plan` — Create a technical implementation plan. Phase 0 runs the architect gate automatically. HARD STOP if API payloads are undefined.
+- `/contracts` — Extract, define, and validate API contracts. Modes: `extract` (from SPEC/feature), `validate` (completeness), `sync` (drift vs implementation), `list`
 - `/research` — Deep-dive research on a specific topic or technical question
 - `/proposal` — Business proposal from an idea or feature — scope, timeline, infrastructure, costs
 

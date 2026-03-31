@@ -60,6 +60,24 @@ When this command is invoked:
    Want to resolve these now, or plan around them?
    ```
    - Is the YAGNI assessment done? (For feature specs)
+   - **Payload/contract completeness check (hard gate):** Scan the spec for every API endpoint, event, or inter-service message this feature introduces or modifies. For each one, verify that request payloads, response payloads, and error responses are fully defined.
+     - **If `contracts/` directory exists:** Check for matching schema files. These are authoritative.
+     - **If no contract files:** Check the feature spec and hub/local decisions for payload definitions.
+     - **If ANY payload is undefined or incomplete → HARD STOP:**
+       ```
+       ⛔ Cannot plan — payload definitions are incomplete.
+
+       The following endpoints/events need full payload definitions before
+       a plan can be written:
+
+       - POST /api/[endpoint] — [what's missing]
+       - event: [event.name] — [what's missing]
+
+       Define these in `contracts/` or in the feature spec, then re-run `/plan`.
+       I will not plan implementation around undefined payloads — this leads
+       to the API and app diverging from agreed contracts.
+       ```
+     - This gate ensures the plan references concrete field names, types, and structures — not vague descriptions that get reinterpreted during implementation.
 
 4. **If the spec is ready**, acknowledge and begin:
 

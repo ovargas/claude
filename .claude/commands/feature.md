@@ -339,6 +339,34 @@ Each slice delivers a complete vertical path (data model → business logic → 
 
 If the founder doesn't have a strong opinion, propose a slicing based on user-facing capabilities, not technical layers.
 
+### API Contract Definition
+
+**If this feature involves any API endpoints, events, or inter-service messages, define the exact payloads NOW — before writing the spec.** This is mandatory, not optional. Undefined payloads will block `/plan` and `/implement` later.
+
+For each endpoint this feature introduces or modifies, work through the contract with the founder:
+
+```
+Let's define the exact API contracts for this feature. For each endpoint,
+I need to know the precise request/response shapes — every field, every type.
+
+This matters because vague contracts lead to the API and app diverging.
+I'll block planning and implementation if these aren't defined.
+
+[For each endpoint:]
+- [METHOD] /api/[path]
+  - What goes in the request? (list every field, type, required/optional)
+  - What comes back in the response?
+  - What error cases exist and what do they return?
+```
+
+**If `contracts/` directory exists:** Create or update schema files in `contracts/endpoints/`, `contracts/models/`, `contracts/events/`. These are the authoritative source.
+
+**If no contracts directory:** Define the payloads inline in the feature spec's "API Contracts" section.
+
+**If the feature is purely internal/UI-only with no API contracts:** Skip this step and note "No API contracts" in the spec.
+
+**Do NOT proceed to the value statement or spec writing until every payload is defined.** The founder may not know every field — that's fine, discuss it. But "we'll figure it out during implementation" is not acceptable.
+
 ### Value Statement
 
 One clear sentence that answers: **"Why are we building this instead of something else?"**
@@ -478,6 +506,52 @@ Manual:
 ### Integration points
 - [System/component] — [how this feature connects to it]
 - [System/component] — [what changes are needed]
+
+### API Contracts
+
+**Every endpoint and event this feature introduces or modifies MUST be fully defined here.** Undefined payloads will block `/plan` and `/implement`.
+
+If `contracts/` directory exists, reference the schema files. If not, define payloads inline below.
+
+#### Endpoints
+
+```
+[METHOD] /api/[path]
+  Request:
+    field1: type (required) — description
+    field2: type (optional) — description
+  Response (200):
+    field1: type — description
+    field2: type — description
+  Errors:
+    400: { error: string, details: string[] } — validation failure
+    409: { error: string } — duplicate resource
+```
+
+[Repeat for each endpoint]
+
+#### Events / Messages
+
+```
+event: [event.name]
+  Payload:
+    field1: type — description
+    field2: type — description
+```
+
+[Repeat for each event]
+
+#### Shared Models
+
+```
+[ModelName]:
+  field1: type (required) — description
+  field2: type (optional, default: value) — description
+```
+
+[Repeat for each shared model. If a model is already defined in contracts/ or another feature spec, reference it: "See contracts/models/user.json"]
+
+<!-- If no API endpoints, events, or shared models are involved, replace this section with: "No API contracts — this feature is internal/UI-only." -->
 
 ### Data model considerations
 - [Schema changes if any]
