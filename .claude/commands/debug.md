@@ -222,17 +222,10 @@ Formulate and verify the root cause.
 2. **Update the bug report status** in frontmatter: `status: investigated`
 
 3. **Update the backlog (if the bug is tracked there):**
-   - Read `docs/backlog.md` and check if this bug has an entry (search for the BUG-NNN ID or ticket ID)
-   - **If found in Doing (`[>]`):** Update to `[=]` (investigated, pending fix):
-     ```
-     - [=] BUG-003: Bug title — `fix/CTR-45` — investigated, root cause found
-     ```
-   - **If found in Ready or not in the backlog:** Leave it, just note it in the findings
-   - Commit backlog updates if any:
-     ```bash
-     git add docs/backlog.md docs/bugs/[bug-report]
-     git commit -m "chore(backlog): mark BUG-003 investigated [TICKET-ID]"
-     ```
+   - Load the backlog skill (read `stack.md` → load matching `backlog-{value}` skill)
+   - Call **get(BUG-NNN)** or **get(ticket-id)** to check if this bug has a backlog entry
+   - **If found in doing status:** Call **mark_implemented(id, branch)** to indicate "investigated, pending fix"
+   - **If found in ready or not in the backlog:** Leave it, just note it in the findings
 
 4. **Present findings:**
 

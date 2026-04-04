@@ -55,7 +55,7 @@ my-app-api-worktrees/        ← worktrees live here
 │   ├── pattern-finder.md    ← Finds existing implementation patterns
 │   ├── docs-locator.md      ← Finds relevant docs, plans, decisions
 │   └── security-reviewer.md ← Security review of code changes
-├── commands/                ← 24 workflow commands
+├── commands/                ← 25 workflow commands
 │   ├── idea.md              ← Capture a new product concept
 │   ├── epic.md              ← Hub-level initiative with cross-team agreements
 │   ├── feature.md           ← Spec a feature with YAGNI challenge + story groups
@@ -79,8 +79,9 @@ my-app-api-worktrees/        ← worktrees live here
 │   ├── docs.md              ← Generate project documentation
 │   ├── status.md            ← Project status briefing
 │   ├── handoff.md           ← Session continuity notes
+│   ├── contracts.md         ← Extract, define, validate API contracts
 │   └── update-workflow.md   ← Sync workflow files from template repo
-└── skills/                  ← 8 domain-specific standards
+└── skills/                  ← 11 domain-specific standards
     ├── git-practices/       ← Branch, commit, PR, worktree, backlog lock conventions
     ├── api-design/          ← API endpoint and route handler standards
     ├── ui-design/           ← Frontend component and styling standards
@@ -88,7 +89,10 @@ my-app-api-worktrees/        ← worktrees live here
     ├── service-layer/       ← Business logic, interfaces, dependency injection standards
     ├── go-practices/        ← Go-specific: DI pattern, mockery, project structure (stack: go)
     ├── checkpoints/         ← Checkpoint protocol for resuming multi-phase commands
-    └── knowledge-check/     ← Developer understanding validation protocol
+    ├── knowledge-check/     ← Developer understanding validation protocol
+    ├── backlog/             ← Abstract backlog interface (operations all commands use)
+    ├── backlog-local/       ← Backlog via local docs/backlog.md (default)
+    └── backlog-external/    ← Backlog via external services (Linear, Jira, GitHub Issues)
 ```
 
 ## Setting Up a Hub Repo
@@ -346,6 +350,25 @@ The workflow separates coordination (locks) from reality tracking (status) acros
 **Backlog status (`docs/backlog.md`)** changes happen on the feature branch. Moving `[ ]` to `[>]` to `[=]` to `[x]` is committed alongside the code. When the PR merges, main's backlog reflects the completed work. This means main's backlog is always accurate — it only shows work as done when the code actually lands.
 
 Exception: when using `--current` mode (sequential stories on the same branch), both lock and status go on the current branch since there's no cross-worktree coordination needed.
+
+### Pluggable Backlog Backend
+
+The backlog system uses a two-layer skill architecture so you can swap the storage backend without changing any commands.
+
+**Layer 1 — Interface** (`backlog/SKILL.md`): Defines abstract operations that all commands reference: `list()`, `get()`, `start()`, `complete()`, `lock()`, `release_lock()`, `push_status()`, etc. Commands never manipulate backlog files directly — they call these operations.
+
+**Layer 2 — Implementation**: A concrete skill that fulfills the interface.
+
+| Implementation | `stack.md` value | Storage | Sync |
+|---|---|---|---|
+| `backlog-local` | `backlog: local` (default) | `docs/backlog.md` + `docs/backlog.lock` | None (local only) |
+| `backlog-external` | `backlog: external` | External service (Linear, Jira, GitHub Issues) + local lock files | Active (push status, pull comments/priorities) |
+
+Commands load the right implementation by reading the `backlog:` field in `stack.md`. If the field is absent, `backlog-local` is the default.
+
+The external backend uses a hybrid model: the external service owns status and priority, while local files own locks (for worktree coordination) and documents (specs, plans, contracts). A `docs/backlog-index.md` file maps story IDs to external issue IDs/URLs.
+
+To switch from local to external: set `backlog: external` in `stack.md`, add a `backlog_config:` section with service type, project, and state mappings, then run the migration steps documented in the `backlog-external` skill.
 
 ## Story Groups
 
@@ -753,6 +776,9 @@ The `/implement` command reads `stack.md` to identify your frameworks, then load
 | `checkpoints` | Protocol for saving and resuming multi-phase commands | `/implement`, `/debug`, `/feature`, `/plan`, `/epic` |
 | `knowledge-check` | Developer understanding validation: question generation, evaluation, tutoring | `/plan`, `/pr`, `/check` |
 | `go-practices` | Go-specific: unexported struct/exported constructor pattern, mockery, project layout | Implementing `.go` files (auto-matched via `stack: go`) |
+| `backlog` | Abstract interface defining all backlog operations (list, get, start, complete, lock, sync) | All commands that read or update the backlog |
+| `backlog-local` | Backlog implementation using `docs/backlog.md` bracket markers and `docs/backlog.lock` | When `stack.md` has `backlog: local` (default) |
+| `backlog-external` | Backlog implementation using external services with local lock files and `docs/backlog-index.md` | When `stack.md` has `backlog: external` |
 
 ### Where to Put Architectural Conventions
 

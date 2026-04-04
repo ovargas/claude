@@ -688,25 +688,27 @@ After the spec is approved:
 4. **After approval**, update the feature spec's Stories section with the final list including groups.
 
 5. **Add stories to the backlog:**
-   - If `docs/backlog.md` exists:
-     - Find the `## Ready` section (NOT `## Inbox` — stories from `/feature` are specced and ready for work)
-     - If no `## Ready` section exists, create it between `## Doing` and `## Inbox` (or at the top if neither exists)
-     - Append each story under `## Ready` with group and order tags:
-     ```markdown
-     - [ ] S-010: [Story title] | feature:FEAT-005 | group:1 | order:1 | service:be | spec:docs/features/YYYY-MM-DD-feature-name.md
-     - [ ] S-011: [Story title] | feature:FEAT-005 | group:1 | order:2 | service:be | spec:docs/features/YYYY-MM-DD-feature-name.md
-     - [ ] S-012: [Story title] | feature:FEAT-005 | group:1 | order:3 | service:be | spec:docs/features/YYYY-MM-DD-feature-name.md
-     - [ ] S-013: [Story title] | feature:FEAT-005 | group:2 | order:1 | service:fe | spec:docs/features/YYYY-MM-DD-feature-name.md
-     - [ ] S-014: [Story title] | feature:FEAT-005 | group:2 | order:2 | service:fe | spec:docs/features/YYYY-MM-DD-feature-name.md
-     - [ ] S-015: [Story title] | feature:FEAT-005 | group:3 | order:1 | spec:docs/features/YYYY-MM-DD-feature-name.md
-     ```
-   - **Tags explained:**
+
+   Load the backlog skill (read `stack.md` → load matching `backlog-{value}` skill).
+
+   First, call **next_id()** to get the starting story ID. Then call **create(items)** with the list of stories. Each item includes:
+   - `id` — sequential story ID (S-010, S-011, etc.)
+   - `title` — story title
+   - `feature` — parent feature ID (FEAT-NNN)
+   - `group` — execution group number within the feature
+   - `order` — execution order within the group
+   - `service` — which service/repo (be, fe, etc.)
+   - `spec` — path to the feature spec
+
+   **Tags explained:**
      - `feature:FEAT-NNN` — parent feature (existing)
      - `group:N` — execution group number within the feature. Stories in the same group are sequential and go on one branch.
-     - `order:N` — execution order within the group. `/next --current` picks the lowest order number that's still `[ ]` Ready.
+     - `order:N` — execution order within the group. `/next --current` picks the lowest order number that's still ready.
      - `service:xx` — which service/repo (existing)
-   - **IMPORTANT:** Stories go to `## Ready`, never `## Inbox`. They have a spec, acceptance criteria, and story breakdown — they are ready for `/next` to pick up.
-   - If an external tracker is configured, create cards linked to the feature spec.
+
+   **IMPORTANT:** Stories are created in ready status. They have a spec, acceptance criteria, and story breakdown — they are ready for `/next` to pick up.
+
+   After creating local backlog items, call **push_stories(feature_id, items)** and **push_summary(feature_id, title, spec_link)** to sync with external services (no-op for local backend).
 
 ---
 
