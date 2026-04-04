@@ -231,34 +231,20 @@ gh pr create --base develop --title "<title>" --body "..."
 
 ### Step 7: Update Backlog and Release Lock (on the PR branch)
 
-**All backlog changes happen on the feature branch.** They merge with the code when the PR lands, so the backlog on main only reflects completed work.
+Load the backlog skill (read `stack.md` → load matching `backlog-{value}` skill).
 
-1. **Update `docs/backlog.md`** — move ALL items on this branch to Done:
-   - Find every item in Doing (`[>]`) or Implemented (`[=]`) state that references this branch
-   - Change each `- [>]` or `- [=]` to `- [x]`
-   - Add PR reference: `[x] S-003: Story title — PR #[number]`
-   - **Handle multiple stories:** If this branch worked on multiple stories (common with `/next --current` workflows), update ALL of them to Done
+Call backlog **complete_all_on_branch(branch, "PR #{number}")**.
 
-2. **Read `docs/backlog.lock`** — find lock entries for this branch:
-   - Remove ALL lock entries for this branch (there may be multiple if several stories were picked up with `/next --current`)
-   - If no more entries remain, delete the lockfile entirely
+The backlog skill handles: finding all items on this branch (doing or implemented), marking them done with the PR reference, removing all lock entries for this branch, updating feature spec statuses if complete, and committing.
 
-3. **Commit changes on the feature branch:**
-   ```bash
-   git add docs/backlog.md docs/backlog.lock
-   git commit -m "chore(backlog): mark stories done and release locks [TICKET-ID]"
-   ```
-
-4. **Push the new commit** so the PR includes it:
-   ```bash
-   git push
-   ```
+**Push the new commit** so the PR includes it:
+```bash
+git push
+```
 
 **Why on the branch, not main:** When the PR merges, the backlog updates and lock releases land on main together with the code. Items stay locked on main until the PR is actually merged — which is the correct definition of done.
 
-**Note on lock merge conflicts (worktree mode):** In default/worktree mode, the lock was committed on main before the branch was created. If main's lockfile has been modified since (other locks added/removed by parallel worktrees), the merge may conflict on `backlog.lock`. Resolve by keeping the other locks and removing only this branch's entries. As a safety net, `/next` Step 2 automatically detects and cleans stale locks from merged PRs.
-
-**Note on stale locks:** If a PR is abandoned or a branch is deleted without merging, the lock becomes stale. `/next` detects stale locks automatically and cleans them up (see `/next` Step 2).
+**Note on stale locks:** If a PR is abandoned or a branch is deleted without merging, the lock becomes stale. `/next` calls **clean_stale_locks()** automatically to detect and remove these.
 
 ### Step 8: Report
 

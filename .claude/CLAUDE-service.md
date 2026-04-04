@@ -26,8 +26,9 @@ If this service is part of a multi-repo product, features can be driven by hub e
 - **`docs/plans/`** — Implementation plans. Step-by-step technical instructions with file references, patterns to follow, and verification commands.
 - **`docs/decisions/`** — Local architectural decision records. Non-obvious technical choices made for this repo.
 - **`contracts/`** — API contract files (endpoints, models, events) as JSON Schema. Authoritative source of truth for payload shapes. `/plan` and `/implement` hard-stop if contracts are missing for endpoints they touch.
-- **`docs/backlog.md`** — Service backlog with four states: `[ ]` Ready, `[>]` Doing, `[=]` Implemented, `[x]` Done.
-- **`docs/backlog.lock`** — Lockfile preventing two worktrees from picking the same item. Managed by `/next` and `/pr`.
+- **`docs/backlog.md`** — Service backlog with four states: `[ ]` Ready, `[>]` Doing, `[=]` Implemented, `[x]` Done. (Used by `backlog-local` skill; external backends may use a different source.)
+- **`docs/backlog.lock`** — Lockfile preventing two worktrees from picking the same item. Managed by `/next` and `/pr`. Always local, even with external backlog backends.
+- **`docs/backlog-index.md`** — Story-to-issue mapping when using an external backlog backend (e.g., Linear, Jira, GitHub Issues).
 - **`docs/proposals/`** — Business proposals generated from ideas or features.
 - **`docs/research/`** — Research outputs.
 - **`docs/checkpoints/`** — Progress checkpoints for long-running commands. Auto-created during execution, auto-deleted on completion. If a file exists here, the command was interrupted mid-work.
@@ -111,6 +112,9 @@ Skills are domain-specific coding standards. `/implement` loads the relevant ski
 | **service-layer** | Service principles: boundaries, transactions, side effects, business rules | Working on services, use cases, domain logic |
 | **checkpoints** | Progress checkpointing for long-running commands | `/implement`, `/debug`, `/feature`, `/plan`, `/epic` |
 | **knowledge-check** | Developer understanding validation — questions, evaluation, tutoring, logging | `/plan` (after approval), `/pr` (before submission), `/check` (standalone) |
+| **backlog** | Abstract interface for backlog operations (list, start, complete, lock, sync) | All commands that read or update the backlog |
+| **backlog-local** | Backlog implementation using `docs/backlog.md` (bracket markers) and `docs/backlog.lock` | When `stack.md` has `backlog: local` (default) |
+| **backlog-external** | Backlog implementation using external services (Linear, Jira, GitHub Issues) with local locks | When `stack.md` has `backlog: external` |
 
 ### Project Skills
 

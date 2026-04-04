@@ -15,8 +15,9 @@ This command uses the `sonnet` model because it's a read-and-organize operation.
 
 **Before doing anything else**, load the conventions:
 
-1. Read `.claude/skills/git-practices/SKILL.md` — this defines branch naming, worktree conventions, and backlog lock format
-2. Read `stack.md` — understand which service this repo represents
+1. Read `stack.md` — understand which service this repo represents and which backlog backend is configured (`backlog:` field, default: `local`)
+2. Read `.claude/skills/git-practices/SKILL.md` — branch naming, worktree conventions
+3. **Load the backlog skill:** Read `.claude/skills/backlog/SKILL.md` (interface), then read `.claude/skills/backlog-{value}/SKILL.md` where `{value}` is the `backlog:` field from `stack.md` (default: `local`). All backlog operations in this command reference the interface — the implementation skill defines how they execute.
 
 ## Invocation
 
@@ -42,44 +43,19 @@ Flags combine: `/next --auto --current` picks the highest-priority item on the c
 
 ### Step 1: Read the Backlog
 
-1. **Read `docs/backlog.md`** fully.
-2. **Read `stack.md`** to understand which service this repo represents (backend, frontend, etc.).
-3. **Read `docs/backlog.lock`** if it exists — identify what's already locked by other worktrees.
-4. **If a specific item was requested** (story ID, feature ID, or service filter), locate it.
-5. **If bare `/next`**, find the first item in the Ready section that:
-   - Matches this repo's service tag
-   - Is NOT locked in `backlog.lock`
+1. **Call backlog **list(status=all)**** to get the full backlog state.
+2. **If a specific item was requested** (story ID, feature ID, or service filter), call **get(id)** to locate it.
+3. **If bare `/next`**, use **list(status=ready)** filtered by this repo's service tag. Exclude items where **check_lock(id)** returns locked=true.
 
 ### Step 2: Clean Stale Locks
 
-Before picking an item, check the health of existing locks in `docs/backlog.lock`:
-
-For each lock entry, check if it's stale:
-1. **PR merged?** Run `gh pr list --head <branch> --state merged` — if the PR was merged, the lock and backlog update should have landed with it. If the lock is still present, it means main hasn't pulled the merged changes yet.
-   - Run `git pull` to get the latest main (which should include the backlog update from the merged PR)
-   - If the lock disappears after pull, it was correctly cleaned up by the PR merge
-   - If the lock persists after pull (edge case — PR was merged but lock commit was missing), remove it
-2. **Worktree gone?** Check if the worktree path still exists
-3. **Branch deleted?** Run `git branch --list <branch>` and `git ls-remote --heads origin <branch>`
-
-If any stale locks are found, clean them up automatically and report:
-```
-Cleaned up stale locks:
-- S-003 (feat/CTR-12) — PR merged, lock released
-- S-008 (fix/CTR-45) — branch deleted, lock released
-```
-
-Commit the cleanup if changes were made:
-```bash
-git add docs/backlog.lock docs/backlog.md
-git commit -m "chore(backlog): clean stale locks"
-```
+Before picking an item, call backlog **clean_stale_locks()**. This detects and removes locks where the PR was merged, the worktree was deleted, or the branch was removed. The backlog skill handles the detection logic, cleanup, and commit.
 
 ### Step 3: Validate the Item
 
 Before picking up the item, check:
 
-1. **Is the item already locked?** Check `docs/backlog.lock`:
+1. **Is the item already locked?** Call **check_lock(id)**:
    - If locked by another worktree (and the lock is not stale — verified in Step 2), skip it and report:
      ```
      S-003 is already being worked on:
@@ -164,35 +140,16 @@ If the story has no identifiable ID at all, ask the developer.
 
 ### Step 5: Lock the Backlog Item
 
-Create or update `docs/backlog.lock`:
+Determine the worktree mode:
+- Default → `worktree`
+- `--here` → `in-place`
+- `--current` → `current-branch`
 
-```yaml
-# Managed by /next and /pr commands — do not edit manually
-locks:
-  - item: "S-003"
-    feature: "FEAT-007"
-    branch: "feat/CTR-12"
-    worktree: "../repo-worktrees/feat/CTR-12"  # or "in-place" if --here, or "current-branch" if --current
-    started: "2026-02-12T14:30:00"
-```
+Call backlog **lock(id, branch, worktree_mode)**.
 
-If the lockfile already exists with other entries, append the new lock — don't overwrite existing ones.
+The backlog skill handles: creating the lock entry, determining commit placement (main for worktree/in-place, current branch for --current), and committing.
 
-**Commit the lock (mode-aware):**
-
-- **Default or `--here` mode:** Commit the lock on main BEFORE creating the branch. This ensures all worktrees can see the lock immediately and prevents race conditions.
-  ```bash
-  git add docs/backlog.lock
-  git commit -m "chore(backlog): lock S-003 for feat/CTR-12"
-  ```
-
-- **`--current` mode:** Commit the lock on the current branch. No switching to main — `--current` is for solo sequential work where cross-worktree coordination isn't needed.
-  ```bash
-  git add docs/backlog.lock
-  git commit -m "chore(backlog): lock S-003 for feat/CTR-12"
-  ```
-
-**Important:** Only the lock file is committed here — NOT the backlog status change. The status update happens on the feature branch (Step 7) so it merges with the PR.
+**Important:** Only the lock is committed here — NOT the backlog status change. The status update happens on the feature branch (Step 7) so it merges with the PR.
 
 ### Step 6: Create the Branch (worktree, in-place, or current)
 
@@ -234,26 +191,19 @@ No worktree is created. Work happens directly in the current repo directory.
    ../{repo}-worktrees/<branch-name>
    ```
 
-### Step 7: Update the Backlog (branch-aware)
+### Step 7: Update the Backlog (on the working branch)
 
-Now that you're on the working branch:
+Now that you're on the working branch, call backlog **start(id, branch, worktree_mode)**.
 
-1. Move the item from Ready to Doing in `docs/backlog.md`:
-   - Change `- [ ]` to `- [>]` (in-progress marker)
-   - **If on a feature branch:** add branch reference: `[>] S-003: Story title — `feat/CTR-12``
-   - **If on main/master/develop:** add direct marker: `[>] S-003: Story title — working on main`
+The backlog skill handles: changing the item status to doing, adding the branch reference, and committing the status change on the working branch.
 
-2. **Commit the backlog update:**
-   ```bash
-   git add docs/backlog.md
-   git commit -m "chore(backlog): start S-003 [TICKET-ID]"
-   ```
+**Branch flow context (feature branch):** The backlog status change merges with the code when the PR lands. This means the main branch only reflects completed work. The lock file (committed on main in Step 5) prevents other worktrees from picking up the same item.
 
-**Branch flow context (feature branch):** The backlog status change merges with the code when the PR lands. This means main's backlog only reflects completed work — items stay as `[ ]` (Ready) on main until the PR merges. The lock file (committed on main in Step 5) prevents other worktrees from picking up the same item.
+**Direct-to-main context (main/master/develop):** Status changes are committed directly on main. No PR step will follow — `/implement` will call **complete()** directly on completion (skipping `implemented`).
 
-**Direct-to-main context (main/master/develop):** Status changes are committed directly on main. No PR step will follow — `/implement` will advance `[>]` directly to `[x]` on completion (skipping `[=]`). There is no lock needed for solo main-branch work, but one is still created for consistency and to signal that work is in progress.
+**For `--current` mode with sequential stories:** Each `/next --current` call triggers another **start()** call. When on a feature branch, the single PR merges all status changes together. When on main, each story completes independently.
 
-**For `--current` mode with sequential stories:** Each `/next --current` call adds another `[>]` marker. When on a feature branch, the single PR merges all status changes to main together. When on main, each story completes independently.
+Also call backlog **pull_comments(id)** to check for team feedback from external services (no-op for local backend).
 
 ### Step 8: Load Context
 
@@ -359,28 +309,27 @@ When `--feature=FEAT-NNN` is passed, the command operates in **group mode** — 
 
 ### How It Works
 
-1. **Read the backlog** and find all stories with `feature:FEAT-NNN`
+1. Call backlog **list(feature=FEAT-NNN)** to find all stories
 2. **Determine the group:**
-   - If the feature has multiple groups (`group:1`, `group:2`, etc.), pick the **lowest group number** that still has `[ ]` Ready stories
+   - If the feature has multiple groups (`group:1`, `group:2`, etc.), pick the **lowest group number** that still has ready stories
    - If a specific group is requested (`--feature=FEAT-005 --group=2`), use that group
    - If stories don't have `group:` tags (older backlog format), treat all stories for the feature as a single group
 3. **Validate the group:**
-   - All stories in the group must be `[ ]` Ready (not locked, not in progress)
+   - All stories in the group must be ready (not locked, not in progress)
    - If some are already done and some are ready, that's fine — only pick the ready ones
-   - If any are locked by another branch, STOP and report the conflict
-4. **Lock ALL stories in the group** in a single commit (Step 5)
+   - For each item, call **check_lock(id)** — if any are locked by another branch, STOP and report the conflict
+4. Call backlog **start_group(feature_id, group, branch, worktree_mode)** — this locks ALL stories and marks the first as doing (Step 5 + 7 combined)
 5. **Create one branch** named `feat/FEAT-NNN` (Step 6) — uses the feature ID, not a story ID
-6. **Mark the FIRST story as `[>]` Doing** on the feature branch (Step 7) — only one story starts as Doing
 
 ### Subsequent `/next --current` Calls
 
 After the initial `--feature` setup, the developer uses `/next --current` to progress through the group:
 
-1. `/next --current` checks the backlog on the current branch
-2. Finds the current story in `[>]` Doing or `[=]` Implemented state
-3. If `[=]` (current story done): marks it `[x]` Done, picks the next story in the group by `order:N`, marks it `[>]`
-4. If `[>]` (still in progress): offers to continue or skip to next
-5. When no more stories remain in the group: reports "All stories in this group are done. Run `/pr` to create the pull request."
+1. `/next --current` calls backlog **list(feature=FEAT-NNN, group=N)** to check group state
+2. Finds the current story in doing or implemented state
+3. If implemented (current story done): calls **advance_in_group(feature_id, group)** — marks it done, starts the next
+4. If doing (still in progress): offers to continue or skip to next
+5. When **advance_in_group** returns "group complete": reports "All stories in this group are done. Run `/pr` to create the pull request."
 
 ### Presentation for Feature Group
 
@@ -439,8 +388,8 @@ After the initial `--feature` setup, the developer uses `/next --current` to pro
    - If `docs/backlog.md` doesn't exist: "No backlog found. Create one with `/feature` (which adds stories automatically) or create `docs/backlog.md` manually."
    - If `git wt` alias isn't available: "Git worktree alias `git wt` not found. Create the worktree manually: `git worktree add ../{repo}-worktrees/<branch> -b <branch>`"
 
-6. **Lock goes on main, backlog status goes on the feature branch:**
-   - The `backlog.lock` is committed on main (for default/here modes) so all worktrees can see locks
-   - The `backlog.md` status change (`[ ]` → `[>]`) is committed on the feature branch so it merges with the PR
-   - For `--current` mode, both lock and status go on the current branch (solo sequential work, no main switching)
-   - The worktree/branch is created AFTER the lock is committed on main
+6. **Lock and status placement are handled by the backlog skill:**
+   - The skill knows to commit locks on main (for worktree/in-place modes) and status changes on the feature branch
+   - For `--current` mode, the skill commits both on the current branch
+   - The worktree/branch is created AFTER the lock step completes
+   - Commands don't need to know the commit placement rules — the skill handles it

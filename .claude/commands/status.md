@@ -39,7 +39,7 @@ The sections below apply to both unless marked **(hub only)** or **(service only
 ### If a specific feature was requested (service only):
 
 1. **Find the feature spec** by name or ID in `docs/features/`
-2. **Read it** along with any associated plan in `docs/plans/` and stories in `docs/backlog.md`
+2. **Read it** along with any associated plan in `docs/plans/` and call backlog **list(feature=FEAT-NNN)** to get story statuses
 3. **Report:**
 
 ```
@@ -60,7 +60,7 @@ Plan: [docs/plans/... | not yet planned]
 
 ### If "backlog" was requested (service only):
 
-1. **Read `docs/backlog.md`** fully
+1. Call backlog **list(status=all)** to get the full backlog state
 2. **Summarize:**
 
 ```
@@ -87,7 +87,7 @@ Plan: [docs/plans/... | not yet planned]
 1. **Read all project documents based on context:**
 
    **Service repo:**
-   - `docs/backlog.md` — current work state
+   - Load the backlog skill (read `stack.md` → load matching `backlog-{value}` skill) and call **list(status=all)** to get the full backlog state
    - `docs/features/` — all feature specs (scan frontmatter for status)
    - `docs/plans/` — all implementation plans
    - `docs/handoffs/` — most recent handoff (if any)
