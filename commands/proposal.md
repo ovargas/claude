@@ -438,7 +438,28 @@ The following items are explicitly outside the scope of this proposal. They may 
 - Decisions: [links to relevant ADRs]
 ```
 
-4. **Run the humanizer (scoped pass) on the drafted document.**
+4. **Run the positive-framing skill (scoped pre-pass) on the drafted document.**
+
+   Invoke the `positive-framing` skill BEFORE the humanizer. The skill rewrites loss-framed prose into gain-framed prose and audits verb tense per section.
+
+   Pass the skill the same scope guardrails as the humanizer:
+
+   ```
+   Scope of positive-framing:
+   - DO transform: Executive Summary, Solution narrative, Scope of Work
+     descriptions, Phased Delivery narratives, deliverable descriptions.
+   - DO NOT alter: markdown tables, bullet lists of factual items, Not Included,
+     Risks / Assumptions / Dependencies, cost figures, requirement IDs,
+     code blocks, headers, frontmatter.
+   ```
+
+   Pass the active `--target-role` value as a Voice Profile constraint: the skill must honor that profile's `**Words to avoid:**` list (see Voice Profiles below) even when its catalog suggests a banned word. The per-profile **Framing note:** entries are authoritative.
+
+   If `--lang` was passed, run positive-framing **before** translation. The English source becomes gain-framed; the translated output inherits the framing.
+
+   If `--voice-sample` was passed, the user's voice takes precedence. The skill surfaces a soft warning only if the sample contains heavy vague present-perfect usage; it does not override the sample.
+
+5. **Run the humanizer (scoped pass) on the drafted document.**
 
    Invoke the `humanizer` skill to remove AI writing patterns from **narrative prose only**. The skill must be instructed to preserve the structural elements of a proposal.
 
@@ -469,7 +490,7 @@ The following items are explicitly outside the scope of this proposal. They may 
 
    After the humanizer returns, verify that no tables or requirement IDs were altered. If any were, restore them from the pre-humanized draft.
 
-5. **Present the proposal:**
+6. **Present the proposal:**
 
 ```
 Proposal created at:
@@ -486,7 +507,7 @@ Proposal created at:
 Review the proposal — especially the Not Included section and timeline estimates. These are the parts that prevent surprises later.
 ```
 
-6. **Iterate based on feedback.** Surgical edits. Re-run the humanizer only if substantial narrative was rewritten.
+7. **Iterate based on feedback.** Surgical edits. Re-run the humanizer only if substantial narrative was rewritten.
 
 ---
 
@@ -503,6 +524,7 @@ The `--target-role` flag selects one of four voice profiles. Each profile shapes
 - **Words to avoid:** *seamless, leverage, synergy, transformative, journey, unlock, empower, robust, cutting-edge, best-in-class*.
 - **Section emphasis:** Expand *Infrastructure*, *Dependencies*, *Assumptions*, *Not Included* (especially security/compliance boundaries). Compress *Executive Summary*. Skip investor-style projections.
 - **Tone markers:** Direct, slightly terse. Names risks and unknowns openly ("this depends on how your auth system handles X — if it doesn't, add N days"). A CTO trusts a proposal that admits risks over one that hides them.
+- **Framing note:** apply positive-framing transforms, but skip any pattern whose replacement appears in the "Words to avoid" list above (especially *leverage* and *empower*). Prefer "build on" or "extend" instead. Never substitute a marketing-fluff word for a clear technical verb.
 - **Default length:** `medium`.
 
 ### `--target-role=cfo` — Economic Buyer
@@ -515,6 +537,7 @@ The `--target-role` flag selects one of four voice profiles. Each profile shapes
 - **Section emphasis:** Expand *Cost Projections*, *Pricing Tiers* (if applicable), *Timeline summary*. Compress deliverable descriptions to one-liners.
 - **AI cost handling:** Always include AI cost projections inline (do not wait for `--include=costs`). Show per-user cost at scale — this is the number they're solving for.
 - **Tone markers:** Numbers-first. Every claim has a dollar figure, percentage, or date. Zero marketing adjectives.
+- **Framing note:** apply positive-framing transforms, but never replace numeric or temporal precision with metaphor. "Without overspending" → "within a fixed $X budget" (concrete), not "with confidence" (vague). If a gain-framed replacement loses a number, keep the original.
 - **Default length:** `compact`.
 
 ### `--target-role=client` — Curious Client
@@ -526,6 +549,7 @@ The `--target-role` flag selects one of four voice profiles. Each profile shapes
 - **Words to avoid:** Technical jargon and acronyms without definitions. Translate *stack, schema, API, deployment* into what they mean for the client.
 - **Section emphasis:** Expand *Scope of Work* descriptions (paint the picture), *Phased Delivery* (makes cost feel safer), *Not Included* (educates without deflating). Compress infrastructure details.
 - **Tone markers:** Warm but precise. Uses "you" and "we." Admits open questions and invites the client into the design conversation. The only profile where some warmth is earned — the humanizer still removes sycophancy.
+- **Framing note:** apply positive-framing transforms uniformly. This profile receives the full benefit of the gain-framing rewrite. Warmth is earned here, so the full catalog applies.
 - **Default length:** `medium`.
 
 ### `--target-role=po` — Scope Validator
@@ -537,6 +561,7 @@ The `--target-role` flag selects one of four voice profiles. Each profile shapes
 - **Words to avoid:** Ambiguous phrases — *"handle edge cases," "polish UX," "as needed," "etc."*. Every deliverable has a checkable definition of done.
 - **Section emphasis:** *Requirements Traceability* table is mandatory and extensive. *Scope of Work* expands into deliverable-level detail with mapped REQ IDs. *Not Included* maps explicitly to requirements excluded from scope. Timeline includes an *Acceptance Criteria* column.
 - **Tone markers:** Precise, unambiguous, contract-adjacent. A PO uses this document to defend the scope to their own stakeholders.
+- **Framing note:** apply positive-framing transforms to narrative prose only. Acceptance criteria, requirement statements, REQ traceability rows, and definition-of-done bullets are contract-adjacent and must remain literal — do not soften them with gain framing.
 - **Standalone requirements:** Requirements are extracted from the source document and given **internal** REQ IDs within this proposal. Do not depend on external requirement IDs — the proposal must stand alone. Cite the source section/heading as the **origin** for each requirement.
 - **Default length:** `extended`.
 
@@ -552,21 +577,45 @@ The `--length` flag controls how much detail survives the final edit. It is orth
 
 When `--length` is omitted and `--auto` is set, default to `medium`. When both are omitted, ask via `AskUserQuestion` in Phase 1 step 4.
 
-## Humanizer Integration
+## Editorial Pipeline
 
-This command uses the `humanizer` skill to strip AI writing patterns from narrative prose after the draft is complete. The integration is **scoped** rather than full-pass — tables, headers, and factual bullet lists are legitimate proposal structure and must not be altered.
+This command applies two scoped editorial passes after the draft is complete: **positive-framing first**, then **humanizer**. The order matters — positive-framing rewrites loss-framed prose and audits verb tense, producing a polarity-correct source that the humanizer then de-AI-ifies for rhythm and word choice. Running them in the opposite order would force the humanizer to fight with reframed sentences.
 
-**When to invoke:** Phase 6, step 4 — after the document is written, before it is presented to the founder.
+Both passes are **scoped** rather than full-pass — tables, headers, factual bullet lists, Not Included, Risks, Assumptions, and Dependencies are legitimate proposal structure and must not be altered by either pass.
+
+**Pass order:** positive-framing (Phase 6, step 4) → humanizer (Phase 6, step 5).
+
+**Translation order:** if `--lang` is set, both editorial passes run on the English source **before** translation. The translated output inherits gain-framing and AI-tell removal from the corrected English; running either pass on translated prose produces worse target-language output.
+
+### Positive-framing pass
+
+This command uses the `positive-framing` skill to rewrite loss-framed prose into gain-framed prose and audit verb tense by section.
+
+**When to invoke:** Phase 6, step 4 — after the document is written, before the humanizer.
 
 **What to pass:**
 - The drafted proposal file path
+- The scope constraints (what to transform, what to leave alone — see step 4)
+- The active `--target-role` value as a Voice Profile constraint (the skill honors that profile's "Words to avoid" list and the per-profile **Framing note:** entry)
+- The `--voice-sample` path if provided (soft-warn only; never override)
+
+**What to verify after:** Not Included, Risks, Assumptions, Dependencies, tables, REQ IDs, cost figures, and dates must be identical to the pre-framing draft. If any were altered, restore them.
+
+### Humanizer pass
+
+This command uses the `humanizer` skill to strip AI writing patterns from narrative prose after the positive-framing pass completes. The integration is **scoped** rather than full-pass.
+
+**When to invoke:** Phase 6, step 5 — after positive-framing, before the document is presented to the founder.
+
+**What to pass:**
+- The post-framing proposal file path
 - The scope constraints (what to humanize, what to leave alone)
 - The voice constraint keyed to the `target-role` frontmatter value
 - The `--voice-sample` path if provided
 
 **What to verify after:** Tables, REQ IDs, cost figures, and dates must be identical to the pre-humanized draft. If any were altered, restore them from the draft before proceeding.
 
-**When NOT to re-humanize:** Iterative feedback edits that only touch existing prose do not need a re-run. Re-run only if a section was rewritten substantially or a new narrative section was added.
+**When NOT to re-run either pass:** Iterative feedback edits that only touch existing prose do not need a re-run. Re-run only if a section was rewritten substantially or a new narrative section was added.
 
 ---
 

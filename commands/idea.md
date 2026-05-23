@@ -342,13 +342,29 @@ This brief was generated through a structured idea intake session on [date].
 The founder's original description: "[Original idea text as first provided]"
 ```
 
-3. **Determine the next step based on repo type:**
+3. **Run the positive-framing skill on the drafted brief.**
+
+   Invoke the `positive-framing` skill to gain-frame the narrative prose. This is the only editorial pass in `/virtual-team:idea` — `humanizer` is not currently invoked here.
+
+   ```
+   Scope of positive-framing:
+   - DO transform: Problem Statement, Value Proposition (Before/After block),
+     MVP Scope Must Have bullets, Open Questions narrative.
+   - DO NOT alter: "Not Doing" section, Risks and Assumptions table, Current
+     Alternatives table, Business Model section, frontmatter, headers.
+   ```
+
+   No `--target-role` applies in `/idea` — apply the catalog uniformly without Voice Profile constraints. If a future feature adds `--lang` support to `/idea`, positive-framing must run before translation (same ordering invariant as `/proposal`'s Editorial Pipeline).
+
+   After the skill returns, verify "Not Doing", Risks, Assumptions, Current Alternatives, and Business Model are byte-identical to the pre-framing draft. If any were altered, restore from the draft.
+
+4. **Determine the next step based on repo type:**
    - Read `stack.md` and check for a `Hub` field or the presence of `examples/CLAUDE-hub.md`
    - **If this is a hub repo:** The next step is `/virtual-team:epic` (coordinate across service repos)
    - **If this is a service repo (single or multi-repo):** The next step is `/virtual-team:feature` (break down into stories)
    - **If this is a standalone project (no hub, single repo):** The next step is `/virtual-team:feature`
 
-4. **Present the document to the user for review:**
+5. **Present the document to the user for review:**
 
 **If hub repo:**
 ```
@@ -380,7 +396,7 @@ Key things to check:
 **Next step:** Run `/virtual-team:feature` to break this idea into a detailed spec with stories for the backlog.
 ```
 
-4. **Iterate based on feedback.** If the founder wants changes, edit the document in place. Don't rewrite from scratch — make surgical edits.
+6. **Iterate based on feedback.** If the founder wants changes, edit the document in place. Don't rewrite from scratch — make surgical edits.
 
 ---
 
