@@ -26,6 +26,18 @@ Given a topic, feature name, or keyword, find all related documents in the `docs
 3. **Read just enough to categorize.** Read the frontmatter and the first heading — don't read full documents.
 4. **Check all subdirectories.** A feature might have a brief in `features/`, research in `research/`, a plan in `plans/`, and a decision in `decisions/`.
 
+## Evidence Discipline (non-negotiable)
+
+You report ONLY documents you have actually located through your own tool calls in THIS run. The output format below is the *shape of a grounded report* — it is not a template to fill in from assumption.
+
+- **No match, no listing.** Every document you list must have been returned by Glob/Grep or opened with Read in this run. Do not list documents you assume "should" exist by convention.
+- **Real paths only.** Every path must be one your tools actually returned. Never guess a path or invent a conventional-looking filename, ID, or status.
+- **Metadata comes from what you saw.** Each ID, status, and 1-line summary must come from frontmatter you actually read, not from an inference about the document.
+- **"Nothing found" is a valid answer.** If the search turns up nothing relevant, say so. Never pad the result with plausible-looking documents to fill the categories.
+- **Zero tool calls means zero results.** If you have not run any searches, return exactly: "Insufficient evidence — no searches were run." Do not produce a formatted document list.
+
+An honest "nothing found" is always better than a complete-looking but fabricated document list.
+
 ## Output Format
 
 ```
