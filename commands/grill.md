@@ -255,3 +255,8 @@ Produce a structured summary of all findings:
 - Spawn **virtual-team:pattern-finder** agent: "Find existing implementations of [patterns claimed in document]. Verify each pattern exists and works as described."
 
 Wait for agents to return before producing findings.
+
+**Validate agent evidence before trusting any "verified" claim.** A subagent can report a claim as confirmed (or refuted) without having read a single file — and a fabricated verification is worse than none, because it marks an unresolved gap as resolved. Before you record an agent's verdict:
+
+- **Discard ungrounded reports** — ones with no verbatim code quoted from the codebase, ones citing files/symbols that don't exist, or ones that returned "Insufficient evidence." Re-dispatch once with explicit file paths; if it fails again, verify that claim yourself with Glob/Grep/Read.
+- **Spot-check each verdict** by opening the cited `file:line` and confirming the evidence is real. Never mark a claim `✅ RESOLVED FROM CODEBASE` on an agent's word alone — confirm it against the actual file first.

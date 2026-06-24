@@ -57,6 +57,23 @@ Determine the relevant domain from the changed file paths and check if the proje
 
 **Dispatch order:** Spawn Pass 1 and Pass 2 agents in parallel (use the Agent tool with two calls in a single message). Run Pass 3 inline while waiting for agents to return. Wait for all 3 passes to complete before proceeding.
 
+### Step 2.5: Validate Agent Evidence (gate — do this before merging)
+
+Subagents can return confident, well-formatted reports without having read a single file. **Treat every agent's output as untrusted until it proves it did real work.** Do not skip this gate just because a report looks thorough.
+
+1. **Reject ungrounded reports.** Discard an agent's report (do not merge it) if it:
+   - contains findings but no verbatim code snippets quoted from the changed files, or
+   - cites files, classes, functions, or tests that do not appear in the diff or the codebase, or
+   - returns "Insufficient evidence" or otherwise shows it made no tool calls.
+
+   When you discard, re-dispatch that agent **once** with explicit instructions to read the specific changed files by path. If it fails the gate a second time, drop the agent entirely and review that dimension inline yourself using Read/Grep.
+
+2. **Spot-check every finding you keep.** For each Must Fix / Should Fix finding an agent reports, independently open the cited `file:line` and confirm: (a) the line exists, (b) its content matches what the agent quoted, and (c) the issue is real in context. Downgrade or drop any finding you cannot corroborate against the actual file.
+
+3. **Never present what you couldn't verify.** A finding you were unable to confirm against the real file does not appear in the review. Mark corroborated findings as `(verified)` so the founder knows you re-checked them.
+
+This is the same discipline you'd apply by hand when a report "feels off" — bake it in every time, not only when something looks wrong.
+
 ### Step 3: Merge Findings
 
 Combine results from all 3 passes into a unified findings list:

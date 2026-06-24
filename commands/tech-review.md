@@ -124,6 +124,11 @@ Review security directly — check for common issues (auth bypass, injection, da
 
 ### Phase 3: Synthesize and Report
 
+**If you spawned agents (`--deep`), validate their evidence before writing any finding sourced from them.** A subagent can return a confident, well-formatted report without having read a single file. For each agent finding you intend to use:
+
+- **Discard ungrounded reports** — ones with no verbatim code quoted from the codebase, ones that cite files/symbols that don't exist, or ones that returned "Insufficient evidence." Re-dispatch once with explicit file paths; if it fails again, drop the agent and analyze that dimension inline with Glob/Grep/Read.
+- **Spot-check each finding** by opening the cited `file:line` and confirming the issue is real and the quoted content matches. Never write a finding into the report that you couldn't corroborate against the actual file.
+
 1. **Create the review document** at `docs/reviews/YYYY-MM-DD-scope.md`:
 
 ```markdown
@@ -255,3 +260,9 @@ The full report has details and file references for every finding.
 6. **Track progress with TodoWrite:**
    - Create todos for each review dimension
    - Mark complete as you evaluate each area
+
+7. **Verify spawned-agent output (`--deep`):**
+   - Subagents can fabricate well-formatted findings without reading any files
+   - Discard reports with no verbatim code or that cite nonexistent files/symbols
+   - Spot-check every agent finding against the real `file:line` before it enters the report
+   - A finding you can't corroborate does not get written down
