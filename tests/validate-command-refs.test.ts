@@ -4,6 +4,7 @@ import { join } from 'path';
 
 const ROOT = join(import.meta.dirname, '..');
 const COMMANDS_DIR = join(ROOT, 'commands');
+const SKILLS_DIR = join(ROOT, 'skills');
 
 function collectMdFiles(dir: string): string[] {
   const files: string[] = [];
@@ -24,6 +25,22 @@ function getCommandNames(): Set<string> {
     readdirSync(COMMANDS_DIR)
       .filter(f => f.endsWith('.md'))
       .map(f => f.replace('.md', ''))
+  );
+}
+
+/**
+ * Get all known skill names from skills/.
+ *
+ * Skills are invokable via slash (`/humanizer`) exactly like commands, so a
+ * `/name` reference resolves if it matches a skill directory too — not only a
+ * command file. Without this, every slash-invoked skill (including vendored
+ * ones like humanizer) would be flagged as an unknown command.
+ */
+function getSkillNames(): Set<string> {
+  return new Set(
+    readdirSync(SKILLS_DIR).filter(
+      d => statSync(join(SKILLS_DIR, d)).isDirectory()
+    )
   );
 }
 
@@ -61,6 +78,7 @@ function extractCommandRefs(content: string): string[] {
 
 describe('command cross-references', () => {
   const commandNames = getCommandNames();
+  const skillNames = getSkillNames();
   const contentDirs = ['commands', 'skills', 'agents'].map(d => join(ROOT, d));
   const allFiles = contentDirs.flatMap(d => collectMdFiles(d));
 
@@ -73,7 +91,7 @@ describe('command cross-references', () => {
     const refs = extractCommandRefs(content);
 
     for (const ref of refs) {
-      if (!commandNames.has(ref) && !isKnownNonCommand(ref)) {
+      if (!commandNames.has(ref) && !skillNames.has(ref) && !isKnownNonCommand(ref)) {
         allRefs.push({ file: relativePath, ref });
       }
     }
@@ -84,8 +102,8 @@ describe('command cross-references', () => {
       '%s is a known command',
       (_, { ref }) => {
         expect(
-          commandNames.has(ref) || isKnownNonCommand(ref),
-          `/${ref} does not match any command in commands/`
+          commandNames.has(ref) || skillNames.has(ref) || isKnownNonCommand(ref),
+          `/${ref} does not match any command in commands/ or skill in skills/`
         ).toBe(true);
       }
     );
