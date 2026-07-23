@@ -1,8 +1,15 @@
-# Claude Code Virtual Team
+# Virtual Team
 
-A Claude Code plugin that turns Claude Code into a virtual development team. It provides a deliberate pipeline from idea to shipped code — with agents, commands, and skills that enforce TDD, contract-first development, and quality gates at every step.
+A development-agent plugin that turns Claude Code or Codex into a virtual development team. It provides a deliberate pipeline from idea to shipped code — with agents, commands, and skills that enforce TDD, contract-first development, and quality gates at every step.
 
-## Getting Started
+## Supported hosts
+
+| Host | Integration | Status |
+|---|---|---|
+| Claude Code | Slash commands, skills, agents, and hooks | Native |
+| Codex | Plugin manifest, workflow skills, shared skills, and subagent adaptation | Native |
+
+## Getting Started with Claude Code
 
 ### 1. Install the plugin
 
@@ -40,6 +47,25 @@ You only need **5 commands** for daily work:
 | `/virtual-team:handoff` | End a session — captures state for the next one |
 
 That's it. Everything else is optional.
+
+## Getting Started with Codex
+
+Add this repository as a plugin marketplace and install Virtual Team:
+
+```bash
+codex plugin marketplace add ovargas/virtual-team
+codex plugin add virtual-team@virtual-team
+```
+
+Restart the Codex app and begin in a new task so the installed Skills are discovered. You can then ask Codex naturally or invoke a workflow explicitly, for example:
+
+```text
+Use virtual-team:workflow-start to initialize this repository.
+Use virtual-team:workflow-flow to add password reset by email.
+Use virtual-team:workflow-status to summarize current work.
+```
+
+Codex loads the same canonical workflow specifications used by Claude Code. The `workflow-*` adapters under `skills/` translate command invocation, tools, subagents, and permission boundaries without duplicating workflow logic. See [Codex installation](.codex/INSTALL.md) for migration from the previous symlink installation.
 
 ### Working with an existing codebase?
 
@@ -266,9 +292,11 @@ Two hooks run automatically — no setup needed:
 
 ```
 commands/       — 26 workflow commands (slash commands)
+skills/workflow-* — Codex adapters for the canonical workflows
 skills/         — 15 coding standards (domain, behavioral, backlog)
 agents/         — 8 specialized sub-agents (read-only)
 hooks/          — Automatic enforcement (SessionStart, PreToolUse)
 examples/       — CLAUDE.md templates for hub and service repos
 tests/          — Structural validation (frontmatter, references)
+.codex-plugin/  — Codex plugin manifest
 ```
