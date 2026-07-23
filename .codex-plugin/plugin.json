@@ -1,0 +1,29 @@
+{
+  "name": "virtual-team",
+  "version": "1.5.0",
+  "description": "Virtual development team workflows for TDD, planning, implementation, review, and delivery",
+  "author": {
+    "name": "Orlando Vargas",
+    "email": "ovargast@gmail.com",
+    "url": "https://github.com/ovargas"
+  },
+  "homepage": "https://github.com/ovargas/virtual-team",
+  "repository": "https://github.com/ovargas/virtual-team",
+  "license": "MIT",
+  "keywords": ["skills", "tdd", "workflow", "development-team", "codex"],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Virtual Team",
+    "shortDescription": "Structured software delivery workflows",
+    "longDescription": "A virtual development team that guides work from idea and specification through TDD implementation, review, validation, and delivery.",
+    "developerName": "Orlando Vargas",
+    "category": "Developer Tools",
+    "capabilities": ["Interactive", "Write"],
+    "websiteURL": "https://github.com/ovargas/virtual-team",
+    "defaultPrompt": [
+      "Start a Virtual Team workflow for this repository.",
+      "Build this feature with the Virtual Team flow.",
+      "Review and validate the current changes."
+    ]
+  }
+}
