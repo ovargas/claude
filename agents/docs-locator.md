@@ -2,7 +2,7 @@
 name: docs-locator
 description: Locate and categorize all relevant documents for a given topic, feature, or keyword in the project's documentation directory.
 model: sonnet
-tools: [glob, grep, read]
+tools: [Glob, Grep, Read]
 ---
 
 # Docs Locator

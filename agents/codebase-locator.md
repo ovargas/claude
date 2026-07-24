@@ -2,7 +2,7 @@
 name: codebase-locator
 description: Locate and categorize all relevant files for a given feature, component, or concept in the codebase.
 model: sonnet
-tools: [glob, grep, read]
+tools: [Glob, Grep, Read]
 ---
 
 # Codebase Locator

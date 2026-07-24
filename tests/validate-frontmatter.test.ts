@@ -20,6 +20,28 @@ function parseFrontmatter(content: string): Record<string, string> | null {
   return fields;
 }
 
+// Canonical Claude Code tool names, as the host resolves them (case-sensitive).
+// If Claude Code ships a new tool an agent needs, add it here — a failure on a
+// legitimately-new name is the intended cost of also catching typos.
+const VALID_TOOLS = new Set([
+  'Bash', 'Edit', 'Glob', 'Grep', 'Read', 'Write',
+  'NotebookEdit', 'TodoWrite', 'WebFetch', 'WebSearch', 'Task',
+]);
+
+function isValidToolName(name: string): boolean {
+  return VALID_TOOLS.has(name);
+}
+
+// Agent `tools:` is a YAML flow sequence — `tools: [Read, Grep, Glob]`, optionally
+// quoted. Returns the individual tool names, or null if the field is absent
+// (absent means "inherit all tools", which is valid).
+function parseToolsList(raw: string | undefined): string[] | null {
+  if (!raw) return null;
+  const inner = raw.trim().replace(/^\[/, '').replace(/\]$/, '');
+  if (!inner.trim()) return [];
+  return inner.split(',').map(t => t.trim().replace(/^["']|["']$/g, ''));
+}
+
 function collectMdFiles(dir: string): string[] {
   const files: string[] = [];
   for (const entry of readdirSync(dir)) {
@@ -101,6 +123,28 @@ describe('agent frontmatter', () => {
     const expectedName = file.replace('.md', '');
 
     expect(fm!.name).toBe(expectedName);
+  });
+
+  // Claude Code resolves `tools:` entries case-sensitively against canonical
+  // PascalCase tool names. A name that doesn't resolve is dropped silently, and
+  // an agent whose whole list drops out is refused at spawn time with
+  // "would be spawned with zero tools". This guard catches that before release.
+  it.each(files)('%s declares resolvable tool names', (file) => {
+    const content = readFileSync(join(agentsDir, file), 'utf-8');
+    const fm = parseFrontmatter(content);
+    const tools = parseToolsList(fm!.tools);
+
+    if (tools === null) return; // no `tools:` field — agent inherits all tools
+
+    expect(tools, `${file} has an empty tools list`).not.toEqual([]);
+
+    // TODO: implement `isValidToolName` below to decide what counts as resolvable.
+    const invalid = tools.filter(t => !isValidToolName(t));
+
+    expect(
+      invalid,
+      `${file} declares unresolvable tool name(s): ${invalid.join(', ')}`
+    ).toEqual([]);
   });
 });
 

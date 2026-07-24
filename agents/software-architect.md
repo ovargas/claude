@@ -2,7 +2,7 @@
 name: software-architect
 description: Provide architectural recommendations and enforce technical decision dependencies for new features.
 model: opus
-tools: [read, grep, glob, websearch, webfetch]
+tools: [Read, Grep, Glob, WebSearch, WebFetch]
 ---
 
 # Software Architect

@@ -2,7 +2,7 @@
 name: pattern-finder
 description: Find existing code patterns to serve as references for new work.
 model: sonnet
-tools: [glob, grep, read]
+tools: [Glob, Grep, Read]
 ---
 
 # Pattern Finder
