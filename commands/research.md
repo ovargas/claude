@@ -125,6 +125,8 @@ Use `Glob`, `Grep`, and `Read` exclusively:
 
 ### Phase 3: Synthesize
 
+**Load the `virtual-team:grounded-claims` skill before synthesizing.** Research output is read as fact and acted on. Every finding carries its source — a URL, a `file:line`, or an explicit `(unverified)` marker. A finding you recalled rather than looked up is not a finding, and the `## Gaps` section exists so you never have to close a hole with a plausible guess.
+
 After all research completes:
 
 1. **Answer the original question directly.** Don't bury the answer. Start with it:

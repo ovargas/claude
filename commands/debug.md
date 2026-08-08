@@ -183,6 +183,8 @@ Starting from the **top-ranked hypothesis** from Phase 2, trace through the code
 
 Formulate and verify the root cause.
 
+**Load the `virtual-team:grounded-claims` skill before this phase.** A root cause is the most load-bearing claim in the whole investigation — a fix gets built on it. Every line of the evidence block below must come from a file you read in this session, cited by `file:line`. A step you assumed rather than traced is not evidence, and "I couldn't trace this part" is a valid finding.
+
 1. **Confirm the surviving hypothesis.** Compare your trace findings against the Phase 2 hypothesis list. Which hypothesis(es) survived? Which were eliminated?
 
 ```

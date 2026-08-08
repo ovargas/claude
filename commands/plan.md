@@ -136,6 +136,8 @@ Please make these decisions, then:
 
 Before writing a single line of the plan, understand the terrain. This phase is about reading code, not writing anything.
 
+**Load the `virtual-team:grounded-claims` skill before this phase.** Everything the plan asserts about existing code becomes a premise the implementation is built on. Claims here are load-bearing by definition — read the file, cite `file:line`, and never describe a pattern you inferred from naming rather than opened.
+
 1. **Map the affected area.** Use `Glob`, `Grep`, and `Read` to find:
    - Files that will be modified (search for related functions, routes, components)
    - Files that contain patterns to follow (similar existing features)

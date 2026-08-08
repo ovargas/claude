@@ -253,7 +253,7 @@ Use these **after** implementation — to verify and improve.
 
 Skills are domain-specific coding standards that load automatically based on what you're working on:
 
-- **Behavioral skills** (always active): TDD enforcement, verification-before-completion, code review reception
+- **Behavioral skills** (always active): TDD enforcement, grounded-claims, verification-before-completion, code review reception
 - **Domain skills** (loaded by context): API design, UI design, data layer, service layer
 - **Stack skills** (you create these): Project-specific patterns matched via `stack.md`
 

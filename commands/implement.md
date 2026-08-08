@@ -509,6 +509,7 @@ Before writing code, load the relevant skills in three layers:
 - **`virtual-team:test-driven-development`** — No production code without a failing test first. Defines the red-green-refactor cycle.
 - **`virtual-team:design-principles`** — Accept collaborators, don't create them. Depend on behavior, not implementation. Checkpoint before writing function signatures and constructors.
 - **`virtual-team:verification-before-completion`** — No completion claims without fresh verification evidence. Every "done" must cite proof from this message.
+- **`virtual-team:grounded-claims`** — No unmarked claims about how existing code, a dependency, or a recalled fact behaves. Anything the implementation rests on must be read first, not assumed.
 - **`virtual-team:receiving-code-review`** — No performative agreement with review feedback. Verify before implementing, push back when wrong.
 
 **Layer 1 — Project skills.** The project may provide its own domain and stack-specific skills, and the plugin (or user-global config) may provide pre-built ones for common stacks (e.g., `go-foundations`, `db-foundations`, `go-gin-api`). Both encode conventions — REST response formats, ORM patterns, component structure, framework idioms — so the LLM doesn't implement blindly.
