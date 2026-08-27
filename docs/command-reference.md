@@ -190,7 +190,7 @@ Each entry includes metadata:
 
 ### External Backlog
 
-Set `backlog: external` in `stack.md` with a `backlog_config` section. Supports GitHub Issues (via `gh`), Linear, and JIRA (via MCP connectors).
+Set `backlog: external` in `stack.md` with a `backlog_config` section. Supports GitHub Issues (via `gh`), Linear, JIRA, and YouTrack (via MCP connectors).
 
 ### Workflow Modes
 
@@ -358,7 +358,7 @@ If 10+ occurrences are found, the issue is flagged as systemic — requiring a f
 | `virtual-team:knowledge-check` | Plan approval, PR creation, standalone check |
 | `virtual-team:backlog` | Any backlog operation (abstract interface) |
 | `virtual-team:backlog-local` | Default file-based implementation |
-| `virtual-team:backlog-external` | GitHub Issues, Linear, JIRA integration |
+| `virtual-team:backlog-external` | GitHub Issues, Linear, JIRA, YouTrack integration |
 
 ---
 

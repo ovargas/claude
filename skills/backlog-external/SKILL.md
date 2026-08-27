@@ -1,6 +1,6 @@
 ---
 name: backlog-external
-description: External service backlog implementation (GitHub Issues, Linear, JIRA). Used when stack.md has backlog external with a backlog_config section.
+description: External service backlog implementation (GitHub Issues, Linear, JIRA, YouTrack). Used when stack.md has backlog external with a backlog_config section.
 ---
 
 # Backlog External — Generic External Service Implementation
@@ -10,13 +10,13 @@ implements: backlog
 stack: external
 ```
 
-This skill implements the backlog interface using an external project management service (GitHub Issues, Linear, Jira, etc.). It reads the service type and state mappings from `stack.md`.
+This skill implements the backlog interface using an external project management service (GitHub Issues, Linear, Jira, YouTrack, etc.). It reads the service type and state mappings from `stack.md`.
 
 **Design principle:** Local is the source of truth for documents (specs, plans, contracts). The external service is the source of truth for item status and priority ordering. This skill bridges both.
 
 ## Prerequisites
 
-- An MCP connector for the configured service (Linear, Jira) **OR** the `gh` CLI for GitHub Issues
+- An MCP connector for the configured service (Linear, Jira, YouTrack) **OR** the `gh` CLI for GitHub Issues
 - The `backlog_config` section in `stack.md` properly configured
 
 ## Configuration in `stack.md`
@@ -25,8 +25,8 @@ This skill implements the backlog interface using an external project management
 backlog: external
 
 backlog_config:
-  service: github-issues     # github-issues | linear | jira
-  project: my-org/my-repo    # GitHub: owner/repo, Linear: project slug, Jira: project key
+  service: github-issues     # github-issues | linear | jira | youtrack
+  project: my-org/my-repo    # GitHub: owner/repo, Linear: project slug, Jira: project key, YouTrack: project short name (e.g. WEB)
   states:
     ready: "Backlog"          # Service-specific state name for each workflow status
     doing: "In Progress"
@@ -36,8 +36,30 @@ backlog_config:
     feature_prefix: "feat:"   # Label prefix for feature grouping (e.g., "feat:FEAT-005")
     service_prefix: "svc:"    # Label prefix for service tagging (e.g., "svc:be")
     group_prefix: "group:"    # Label prefix for story groups
-  issue_type: "Story"         # Jira only: issue type for stories
+  issue_type: "Story"         # Jira/YouTrack: issue type for stories (YouTrack: the "Type" field value)
 ```
+
+**YouTrack example** (`states` are the values of the project's **State** field; `project` is the short name that prefixes issue IDs like `WEB-132`):
+
+```yaml
+backlog: external
+
+backlog_config:
+  service: youtrack
+  project: WEB               # YouTrack project short name — issues are WEB-1, WEB-2, ...
+  states:
+    ready: "Open"
+    doing: "In Progress"
+    implemented: "In Review"
+    done: "Done"
+  labels:                    # YouTrack has no "labels" — these prefixes become tags via manage_issue_tags
+    feature_prefix: "feat:"
+    service_prefix: "svc:"
+    group_prefix: "group:"
+  issue_type: "Story"        # Value of the YouTrack "Type" field
+```
+
+> **YouTrack requires a connected MCP server.** JetBrains ships a built-in **Remote MCP Server** at `https://{your-instance}.youtrack.cloud/mcp` (YouTrack 2025.3+, Cloud or Server). Add it as an MCP connector (OAuth or a permanent token, `Authorization: Bearer <token>`). Its predefined tools run under **your** account permissions.
 
 ## How It Works — The Hybrid Model
 
@@ -59,8 +81,30 @@ For every operation, the AI:
    - **github-issues:** Use `gh` CLI commands (already available, no MCP needed)
    - **linear:** Use the Linear MCP connector tools
    - **jira:** Use the Jira MCP connector tools
+   - **youtrack:** Use the YouTrack MCP connector tools
 3. Translates the operation's intent into the appropriate tool call
 4. The skill describes WHAT to do, not WHICH specific tool to call — the AI maps to available tools at runtime
+
+**YouTrack tool map (JetBrains predefined MCP tools):**
+
+� Operation intent | YouTrack MCP tool |
+|---|---|
+| Search / list issues | `search_issues` (YouTrack query, e.g. `project: WEB State: {Open} tag: feat:FEAT-005`) |
+| Read one issue | `get_issue` |
+| Discover custom field values | `get_issue_fields_schema` |
+| Create issue | `create_issue` (set project short name, summary, `State`, `Type` fields) |
+| Update fields / **change state** | `update_issue` (set the `State` field to the mapped value) |
+| Assign | `change_issue_assignee` |
+| Add tags (feature/service/group) | `manage_issue_tags` |
+| Read / add comments | `get_issue_comments` / `add_issue_comment` |
+| Link epic ↔ story | `link_issues` (use the `subtask` link type) |
+| Log time | `log_work` |
+| Find project | `find_projects` / `get_project` |
+
+**YouTrack specifics to respect:**
+- State is a **custom field**, not a separate status API — change it with `update_issue` by setting the `State` field to the value configured in `backlog_config.states`. Call `get_issue_fields_schema` first if unsure of the exact field/value names.
+- YouTrack has **tags**, not labels — the `labels.*_prefix` values become tag names applied via `manage_issue_tags`.
+- The external issue ID is the readable ID (e.g. `WEB-132`); use it in `docs/backlog-index.md`.
 
 ### list(filter)
 
@@ -77,6 +121,8 @@ gh issue list --repo {project} --state open --label "{label}" --json number,titl
 ```
 
 **For Linear/Jira:** Use the appropriate MCP tool to list/search issues with the matching state and labels.
+
+**For YouTrack:** Use `search_issues` with a YouTrack query, e.g. `project: {project} State: {states.ready} tag: {feature_prefix}{FEAT-ID}`.
 
 **Priority ordering:** The external service's ordering is authoritative. Items are returned in the order the service provides them.
 
@@ -167,7 +213,7 @@ Update the issue status in the external service. Map the workflow status to the 
 Create or update a parent issue/epic in the external service:
 - Title: `{feature_id}: {title}`
 - Description: Link to the local spec file
-- If the service supports parent-child relationships (Linear, Jira), set this as the parent of all story issues
+- If the service supports parent-child relationships (Linear, Jira, YouTrack), set this as the parent of all story issues. For YouTrack, create the epic with `create_issue` and connect each story with `link_issues` using the `subtask` link type.
 
 ### push_stories(feature_id, items)
 
@@ -188,7 +234,7 @@ Team feedback on {id}:
 
 Retrieve the current issue ordering from the external service. This overrides any local ordering:
 - The external service's priority/position is authoritative
-- If the team reordered issues in Linear/Jira, that's the new priority
+- If the team reordered issues in Linear/Jira/YouTrack, that's the new priority
 
 ---
 

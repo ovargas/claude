@@ -323,7 +323,7 @@ How will this repo be developed?
 
 Gather:
 - **Mode** — `solo` (one developer, default) or `team` (multiple developers working concurrently)
-- **Backlog** — `local` (file-based `docs/backlog.md`, default) or `external` (GitHub Issues, Linear, JIRA)
+- **Backlog** — `local` (file-based `docs/backlog.md`, default) or `external` (GitHub Issues, Linear, JIRA, YouTrack)
 - **Skills scope** — `global` (default — load project-local `skills/` first, fall back to plugin/user-global skills) or `local` (only project-local `skills/`, no fallback). If unset, missing, or invalid, treat as `global`.
 
 If `local`:
