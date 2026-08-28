@@ -87,7 +87,7 @@ For every operation, the AI:
 
 **YouTrack tool map (JetBrains predefined MCP tools):**
 
-´ Operation intent | YouTrack MCP tool |
+| Operation intent | YouTrack MCP tool |
 |---|---|
 | Search / list issues | `search_issues` (YouTrack query, e.g. `project: WEB State: {Open} tag: feat:FEAT-005`) |
 | Read one issue | `get_issue` |
